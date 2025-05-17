@@ -1,0 +1,117 @@
+﻿@page "/simulador"
+@inject SimuladorService SimuladorService
+@inject IJSRuntime JS
+@using Compilador_Assembly_Teste01.Classes
+
+<h3 class="titulo">Simulador de Assembly</h3>
+
+<div class="form-container">
+    <div class="form-group">
+        <label for="filePath">Caminho do Arquivo</label>
+        <input id="filePath" @bind="filePath" placeholder="Ex: C:\código\teste.asm" />
+    </div>
+
+    <div class="form-group">
+        <label for="clockMHz">Clock (MHz)</label>
+        <input id="clockMHz" type="number" @bind="clockMHz" />
+    </div>
+
+    <div class="form-group">
+        <label for="ciclosR">Ciclos para instruções tipo R</label>
+        <input id="ciclosR" type="number" @bind="ciclosR" />
+    </div>
+
+    <div class="form-group">
+        <label for="ciclosI">Ciclos para instruções tipo I</label>
+        <input id="ciclosI" type="number" @bind="ciclosI" />
+    </div>
+
+    <div class="form-group">
+        <label for="ciclosJ">Ciclos para instruções tipo J</label>
+        <input id="ciclosJ" type="number" @bind="ciclosJ" />
+    </div>
+
+    <button @onclick="ExecutarSimulacao">Executar Simulação</button>
+</div>
+
+@if (resultado != null)
+{
+    <div class="resultado">
+        <h4>Resultados</h4>
+        <p><strong>Total de Instruções:</strong> @resultado.TotalInstrucoes</p>
+        <p><strong>Total de Ciclos:</strong> @resultado.TotalCiclos</p>
+        <p><strong>Tempo Total Estimado:</strong> @resultado.TempoTotalSegundos segundos</p>
+    </div>
+}
+
+@code {
+    private string filePath;
+    private decimal clockMHz;
+    private int ciclosR;
+    private int ciclosI;
+    private int ciclosJ;
+    private ResultadoSimulacao resultado;
+
+    private async Task ExecutarSimulacao()
+    {
+        resultado = await SimuladorService.ExecutarSimulacao(filePath, clockMHz, ciclosR, ciclosI, ciclosJ);
+    }
+}
+
+<style>
+    .titulo {
+        font-size: 24px;
+        margin-bottom: 20px;
+        text-align: center;
+        color: #333;
+    }
+
+    .form-container {
+        max-width: 600px;
+        margin: auto;
+        padding: 20px;
+        background: #f9f9f9;
+        border-radius: 10px;
+        box-shadow: 0 0 10px #ccc;
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+        .form-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 8px;
+            font-size: 14px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+    button {
+        padding: 10px 20px;
+        font-size: 16px;
+        background: #0078d4;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+        button:hover {
+            background: #005a9e;
+        }
+
+    .resultado {
+        margin-top: 30px;
+        background: #e0f7fa;
+        padding: 20px;
+        border-radius: 10px;
+    }
+
+</style>
