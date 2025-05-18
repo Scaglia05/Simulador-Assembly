@@ -79,9 +79,12 @@
             </div>
 
             <div class="modal-buttons">
-                @if (TemMaisInstrucoes)
+                @if (TemMaisInstrucoes && !ExecutandoDelay)
                 {
                     <button class="btn-primary" @onclick="ExecutarClock">Clock++</button>
+                }
+                else if (TemMaisInstrucoes && ExecutandoDelay)
+                {
                 }
                 else
                 {
@@ -109,6 +112,7 @@
     private int linhaAtual = 0;
     private bool mostrarModal = false;
     private bool TemMaisInstrucoes => linhaAtual < LinhasPrograma.Count - 1;
+    private bool ExecutandoDelay = false;
     private string LinhaAtualCompletaAssembly { get; set; }
     private string resultadoSimulacao = string.Empty;
 
@@ -182,10 +186,12 @@
     }
 
 
-    private void ExecutarClock()
+    private async Task ExecutarClock()
     {
         while (linhaAtual < LinhasPrograma.Count)
         {
+            ExecutandoDelay = true;
+            StateHasChanged();
             LinhaAtualCompletaAssembly = string.Empty;
             var linha = LinhasPrograma[linhaAtual].Trim();
             LinhaAtualCompletaAssembly = linha;
@@ -218,13 +224,6 @@
 
                 instrucoes.Executar(instrucao, operandos, simuladorObj.Registradores, memoria, Labels, linhaAtual, ciclosInstrucoes, simuladorObj.TempoClockUnicoSegundos, memoriaInstrucao);
 
-                if (TabelaInstrucoes.Instrucoes.TryGetValue(instrucao, out var dicInstrucoes))
-                {
-                    int ciclos = dicInstrucoes.Item2;
-                    decimal tempoInstrucaoSegundos = ciclos * simuladorObj.TempoClockUnicoSegundos;
-                     Simulador.AguardarTempo(tempoInstrucaoSegundos);
-                }
-
                 if (instrucao.StartsWith("j"))
                 {
                     string label = operandos.FirstOrDefault();
@@ -241,6 +240,14 @@
                 {
                     linhaAtual++;
                 }
+
+                if (TabelaInstrucoes.Instrucoes.TryGetValue(instrucao, out var dicInstrucoes))
+                {
+                    int ciclos = dicInstrucoes.Item2;
+                    await simuladorObj.AguardarTempo(ciclos, simuladorObj.TempoClockUnicoSegundos);
+                }
+                ExecutandoDelay = false;
+                StateHasChanged();
 
                 break; // Executou uma instrução, sai do loop
             }
@@ -376,5 +383,4 @@
     .modal-buttons {
         text-align: right;
     }
-    
 </style>

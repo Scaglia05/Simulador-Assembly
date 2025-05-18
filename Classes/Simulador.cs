@@ -13,10 +13,7 @@ namespace Simulador_Assembly_Final.Classes {
         public int CyclesJ { get; set; }
 
         // Tempo de um único ciclo de clock em segundos
-        public decimal TempoClockUnicoSegundos { get; set; }
-
-        // Tempo total acumulado em segundos (você pode somar com base nos ciclos executados)
-        public decimal ClockTotalSegundos { get; set; }
+        public int TempoClockUnicoSegundos { get; set; }
 
 
         public Dictionary<string, int> Labels { get; set; } = new();
@@ -24,20 +21,16 @@ namespace Simulador_Assembly_Final.Classes {
         public Memoria Memoria { get; set; } = new();
 
 
-        public static void AguardarTempo(decimal tempoEmSegundos) {
-            int milissegundos = (int)(tempoEmSegundos * 1000);
-            if (milissegundos > 0) {
-                Thread.Sleep(milissegundos);
-            }
+        public async Task AguardarTempo(int ciclos, int tempoPorCicloEmMs) {
+            int tempoTotalMs = ciclos * tempoPorCicloEmMs;
+            await Task.Delay(tempoTotalMs);
         }
 
-        public async Task<decimal> ObterTempoMs(decimal Clock) {
-
-            decimal tempoSegundos = 1 / (Clock * 1_000_000m);
+        public Task<int> ObterTempoMs(decimal clockEmMHz) {
+            decimal tempoSegundos = 1 / (clockEmMHz * 1_000_000m);
             decimal tempoMilissegundos = tempoSegundos * 1000;
-            return tempoMilissegundos;
+            return Task.FromResult((int)Math.Round(tempoMilissegundos));
         }
-
 
 
         // Conversão de registradores do estilo $t0, $s1, etc. para seus números
@@ -216,7 +209,7 @@ namespace Simulador_Assembly_Final.Classes {
                     if (TabelaInstrucoes.Instrucoes.TryGetValue(instrucao, out var dicInstrucoes)) {
                         int ciclos = dicInstrucoes.Item2;
                         decimal tempoInstrucaoSegundos = ciclos * tempoClockUnicoSegundos;
-                        Simulador.AguardarTempo(tempoInstrucaoSegundos);
+                        //Simulador.AguardarTempo(tempoInstrucaoSegundos);
                     }
 
                     if (instrucao.StartsWith("j")) {
