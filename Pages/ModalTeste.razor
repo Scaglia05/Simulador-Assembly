@@ -1,0 +1,21 @@
+﻿@page "/modal-teste"
+
+<button @onclick="AbrirModal">Abrir Modal</button>
+
+@if (mostrarModal)
+{
+    <div style="position:fixed; inset:0; background-color:rgba(0,0,0,0.5); display:flex; justify-content:center; align-items:center; z-index:1000;">
+        <div style="background:#fff; padding:2rem; border-radius:10px; min-width:300px; box-shadow:0 0 10px #000;">
+            <h3>Modal Simples</h3>
+            <p>Conteúdo do modal aqui</p>
+            <button @onclick="FecharModal">Fechar</button>
+        </div>
+    </div>
+}
+
+@code {
+    private bool mostrarModal = false;
+
+    private void AbrirModal() => mostrarModal = true;
+    private void FecharModal() => mostrarModal = false;
+}

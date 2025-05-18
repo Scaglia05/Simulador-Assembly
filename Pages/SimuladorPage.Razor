@@ -31,70 +31,350 @@
         <input id="ciclosJ" type="number" @bind="simuladorObj.CyclesJ" />
     </div>
 
-    @* <button @onclick="ExecutarSimulacao">Executar Simulação</button> *@
+    <button class="btn-primary" @onclick="ExecutarSimulacaoAsync">Executar Simulação</button>
+
+    @if (!string.IsNullOrWhiteSpace(resultadoSimulacao))
+    {
+        <div class="resultado">
+            <pre>@resultadoSimulacao</pre>
+        </div>
+    }
 </div>
 
+@if (mostrarModal)
+{
+    <div style="position:fixed; inset:0; background-color:rgba(0,0,0,0.5); display:flex; justify-content:center; align-items:center; z-index:1000;">
+        <div style="background:#fff; padding:2rem; border-radius:10px; min-width:300px; box-shadow:0 0 10px #000;">
+            <h4>Execução Clock a Clock</h4>
+
+            <div class="painel-execucao">
+                <div class="bloco">
+                    <strong>Registradores</strong>
+                    @foreach (var reg in simuladorObj.Registradores)
+                    {
+                        <div>@reg.Key: @reg.Value</div>
+                    }
+                </div>
+
+                <div class="bloco">
+                    <strong>Memória de Dados</strong>
+                    @foreach (var item in memoria.MostrarEstadoMemoriaDados())
+                    {
+                        <div>@item</div>
+                    }
+                </div>
+
+                <div class="bloco">
+                    <strong>Memória de Programa</strong>
+                    @foreach (var linha in memoriaInstrucao.ObterEstadoMemoriaDados())
+                    {
+                        <div class="linha-execucao">@linha</div>
+                    }
+                </div>
+
+                <div class="bloco">
+                    <strong>Linha em execução</strong>
+                    <div>@instrucoes.ObterHexadecimalLinha(LinhaAtualCompletaAssembly)</div>
+                </div>
+            </div>
+
+            <div class="modal-buttons">
+                @if (TemMaisInstrucoes)
+                {
+                    <button class="btn-primary" @onclick="ExecutarClock">Clock++</button>
+                }
+                else
+                {
+                    <p><strong>Simulação concluída.</strong></p>
+                }
+
+                <button class="btn-secondary" @onclick="FecharModal">Fechar</button>
+            </div>
+        </div>
+    </div>
+}
 
 
 @code {
-    public Simulador simuladorObj { get; set; } = new();
+    private Simulador simuladorObj { get; set; } = new();
+    private MemoriaInstrucao memoriaInstrucao { get; set; } = new();
+    private Memoria memoria { get; set; } = new();
+    private Instrucoes instrucoes { get; set; } = new();
+    private TabelaInstrucoes tabelaInstrucoes { get; set; } = new();
+    private Dictionary<string, int> Labels = new();
+    private Dictionary<string, int> Registradores = new();
+    private List<string> MemoriaPrograma = new();
+    private List<string> LinhasPrograma { get; set; } = new();
 
-}
+    private int linhaAtual = 0;
+    private bool mostrarModal = false;
+    private bool TemMaisInstrucoes => linhaAtual < LinhasPrograma.Count - 1;
+    private string LinhaAtualCompletaAssembly { get; set; }
+    private string resultadoSimulacao = string.Empty;
 
-<style>
-    .titulo {
-        font-size: 24px;
-        margin-bottom: 20px;
-        text-align: center;
-        color: #333;
+
+    private async Task ExecutarSimulacaoAsync()
+    {
+        if (string.IsNullOrWhiteSpace(simuladorObj.FilePath) || !File.Exists(simuladorObj.FilePath))
+        {
+            resultadoSimulacao = "Arquivo não encontrado.";
+            return;
+        }
+
+        if (simuladorObj.ClockMHz <= 0 || simuladorObj.CyclesR <= 0 || simuladorObj.CyclesI <= 0 || simuladorObj.CyclesJ <= 0)
+        {
+            resultadoSimulacao = "Verifique os valores de clock e ciclos. Todos devem ser maiores que zero.";
+            return;
+        }
+
+        simuladorObj.TempoClockUnicoSegundos = await simuladorObj.ObterTempoMs(simuladorObj.ClockMHz);
+
+        resultadoSimulacao = $"--- Parâmetros Iniciais ---\n" +
+            $"Arquivo: {simuladorObj.FilePath}\n" +
+            $"Clock: {simuladorObj.ClockMHz} MHz\n" +
+            $"Tempo de um ciclo de clock: {simuladorObj.TempoClockUnicoSegundos} segundos\n" +
+            $"Ciclos tipo R: {simuladorObj.CyclesR} | Ciclos tipo I: {simuladorObj.CyclesI} | Ciclos tipo J: {simuladorObj.CyclesJ}\n\n";
+
+        Registradores = TabelaInstrucoes.Registradores.CriarRegistradores();
+        LinhasPrograma = File.ReadAllLines(simuladorObj.FilePath).ToList();
+
+        // Salvar em variáveis de estado para uso no ExecutarClock()
+        MemoriaPrograma = LinhasPrograma.Where(l => !string.IsNullOrWhiteSpace(l) && !l.Trim().StartsWith("#")).ToList();
+
+        // Mapear labels
+        Labels.Clear();
+        for (int i = 0; i < LinhasPrograma.Count; i++)
+        {
+            var linha = LinhasPrograma[i].Trim();
+
+            if (linha.EndsWith(":"))
+            {
+                string nomeLabel = linha.Substring(0, linha.Length - 1).Trim();
+                Labels[nomeLabel] = i;
+            }
+        }
+
+        // Parse das instruções
+        instrucoes = new Instrucoes();
+        linhaAtual = 0;
+        mostrarModal = true;
+        StateHasChanged();
     }
 
+    private void FecharModal()
+    {
+        mostrarModal = false;
+        linhaAtual = 0;
+        resultadoSimulacao = string.Empty;
+        simuladorObj = new(); // Cria um novo objeto, limpando os campos do formulário
+        memoriaInstrucao = new();
+        memoria = new();
+        instrucoes = new();
+        tabelaInstrucoes = new();
+        Labels = new();
+        Registradores = new();
+        LinhasPrograma = new();
+        MemoriaPrograma = new();
+        LinhaAtualCompletaAssembly = string.Empty;
+        Totalizador.Reset(); // Supondo que exista um método estático para resetar os totais
+
+        StateHasChanged(); // Garante que a interface seja atualizada
+    }
+
+
+    private void ExecutarClock()
+    {
+        while (linhaAtual < LinhasPrograma.Count)
+        {
+            LinhaAtualCompletaAssembly = string.Empty;
+            var linha = LinhasPrograma[linhaAtual].Trim();
+            LinhaAtualCompletaAssembly = linha;
+            if (string.IsNullOrWhiteSpace(linha) || linha.StartsWith("#") || linha.EndsWith(":"))
+            {
+                linhaAtual++;
+                continue;
+            }
+
+            var (instrucao, operandos) = Instrucoes.ParseInstrucao(linha);
+
+            if (!string.IsNullOrEmpty(instrucao) && operandos != null)
+            {
+                Totalizador.TotalInstrucoes++;
+
+                if (instrucoes == null)
+                    instrucoes = new Instrucoes();
+
+                var ciclosInstrucoes = Instrucoes.ParseWordsToArray(
+                    simuladorObj.FilePath,
+                    simuladorObj.CyclesI,
+                    simuladorObj.CyclesJ,
+                    simuladorObj.CyclesR,
+                    simuladorObj.TempoClockUnicoSegundos,
+                    memoriaInstrucao
+                );
+
+                if (ciclosInstrucoes.TryGetValue(instrucao, out int ciclosInstrucao))
+                    Totalizador.TotalCiclos += ciclosInstrucao;
+
+                instrucoes.Executar(instrucao, operandos, simuladorObj.Registradores, memoria, Labels, linhaAtual, ciclosInstrucoes, simuladorObj.TempoClockUnicoSegundos, memoriaInstrucao);
+
+                if (TabelaInstrucoes.Instrucoes.TryGetValue(instrucao, out var dicInstrucoes))
+                {
+                    int ciclos = dicInstrucoes.Item2;
+                    decimal tempoInstrucaoSegundos = ciclos * simuladorObj.TempoClockUnicoSegundos;
+                     Simulador.AguardarTempo(tempoInstrucaoSegundos);
+                }
+
+                if (instrucao.StartsWith("j"))
+                {
+                    string label = operandos.FirstOrDefault();
+                    if (Labels.ContainsKey(label))
+                        linhaAtual = Labels[label];
+                    else
+                        resultadoSimulacao = $"Erro: Label {label} não encontrada.";
+                }
+                else if (instrucao.StartsWith("b"))
+                {
+                    linhaAtual = simuladorObj.Registradores["PC"];
+                }
+                else
+                {
+                    linhaAtual++;
+                }
+
+                break; // Executou uma instrução, sai do loop
+            }
+            else
+            {
+                resultadoSimulacao = $"Erro ao processar a linha: {linha}. A instrução não foi válida.";
+                mostrarModal = false;
+                break;
+            }
+        }
+
+        if (linhaAtual >= LinhasPrograma.Count)
+        {
+            resultadoSimulacao += $"\n--- Resultados Finais ---\n" +
+                                  $"Total de Instruções Executadas: {Totalizador.TotalInstrucoes}\n" +
+                                  $"Total de Ciclos: {Totalizador.TotalCiclos}\n" +
+                                  $"Tempo Total Estimado de Execução: {Totalizador.TempoTotalSegundos} segundos";
+        }
+
+        StateHasChanged();
+    }
+
+}
+<style>
+    /* Container do formulário */
     .form-container {
         max-width: 600px;
-        margin: auto;
-        padding: 20px;
+        margin: 2rem auto;
+        padding: 1.5rem;
         background: #f9f9f9;
-        border-radius: 10px;
-        box-shadow: 0 0 10px #ccc;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
 
     .form-group {
-        margin-bottom: 15px;
+        margin-bottom: 1.2rem;
     }
 
         .form-group label {
             display: block;
-            font-weight: bold;
-            margin-bottom: 5px;
+            margin-bottom: 0.3rem;
+            font-weight: 600;
+            color: #333;
         }
 
         .form-group input {
             width: 100%;
-            padding: 8px;
-            font-size: 14px;
-            border-radius: 5px;
+            padding: 0.5rem 0.7rem;
             border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1rem;
+            box-sizing: border-box;
         }
 
     button {
-        padding: 10px 20px;
-        font-size: 16px;
-        background: #0078d4;
-        color: white;
-        border: none;
-        border-radius: 5px;
         cursor: pointer;
+        font-weight: 600;
+        border: none;
+        border-radius: 6px;
+        padding: 0.6rem 1.3rem;
+        transition: background-color 0.3s ease;
     }
 
-        button:hover {
-            background: #005a9e;
+    .btn-primary {
+        background-color: #007bff;
+        color: white;
+    }
+
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+
+    .btn-secondary {
+        background-color: #6c757d;
+        color: white;
+        margin-left: 0.5rem;
+    }
+
+        .btn-secondary:hover {
+            background-color: #5a6268;
         }
 
     .resultado {
-        margin-top: 30px;
-        background: #e0f7fa;
-        padding: 20px;
-        border-radius: 10px;
+        margin-top: 1.5rem;
+        background-color: #eef2f7;
+        padding: 1rem;
+        border-radius: 6px;
+        white-space: pre-wrap;
+        font-family: Consolas, monospace;
+        max-height: 300px;
+        overflow-y: auto;
     }
 
+    /* Container dos blocos internos */
+    .painel-execucao {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    /* Cada bloco dentro do painel */
+    .bloco {
+        flex: 1 1 200px;
+        background: #f7f9fc;
+        border-radius: 8px;
+        padding: 1rem;
+        box-shadow: inset 0 0 5px rgba(0,0,0,0.05);
+        max-height: 200px;
+        overflow-y: auto;
+    }
+
+    /* Destaque para a linha atual em execução */
+    .linha-execucao {
+        padding: 3px 5px;
+        border-radius: 4px;
+        margin-bottom: 2px;
+        font-family: Consolas, monospace;
+        font-size: 0.9rem;
+        color: #444;
+    }
+
+    .linha-atual {
+        background-color: #d1e7dd;
+        border-left: 4px solid #198754;
+        font-weight: 600;
+        color: #0f5132;
+    }
+
+    /* Botões do modal alinhados */
+    .modal-buttons {
+        text-align: right;
+    }
+    
 </style>

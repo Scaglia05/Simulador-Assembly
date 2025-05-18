@@ -304,8 +304,26 @@ namespace Simulador_Assembly_Final.Classes {
 
             //Console.WriteLine("Estado da Memória:");
             memoria.MostrarEstadoMemoriaDados();  // Mostra os primeiros 16 endereços de memória, você pode ajustar conforme necessário
-            memoriaInstrucao.MostrarEstadoMemoriaDados();
+            memoriaInstrucao.ObterEstadoMemoriaDados();
 
         }
+
+
+        public string ObterHexadecimalLinha(string? linhaAtual) {
+
+            if (linhaAtual is null)
+                return string.Empty;
+
+            string linhaLimpa = linhaAtual.Split('#')[0].Trim();
+            if (string.IsNullOrWhiteSpace(linhaLimpa))
+                return string.Empty;
+
+            var (instrucao, operandos) = ParseInstrucao(linhaLimpa);
+            Simulador simulador = new Simulador();
+            string conversaoHexa = simulador.ConverterInstrucaoParaHexadecimal(instrucao, operandos);
+
+            return conversaoHexa;
+        }
+
     }
 }

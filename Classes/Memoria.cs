@@ -46,15 +46,19 @@ namespace Simulador_Assembly_Final.Classes {
             memoria[endereco] = (byte)valor;
         }
 
-        public void MostrarEstadoMemoriaDados() {
-            if (!memoria.Any()) {
-                //Console.WriteLine("Memória vazia.");
-                return;
+        public List<string> MostrarEstadoMemoriaDados() {
+            var resultado = new List<string>();
+
+            if (memoria == null || !memoria.Any()) {
+                resultado.Add("Memória vazia.");
+                return resultado;
             }
 
             foreach (var par in memoria.OrderBy(e => e.Key)) {
-                //Console.WriteLine($"Endereço {par.Key:D4}: {par.Value:X2}");
+                resultado.Add($"Endereço {par.Key:D4}: {par.Value:X2}");
             }
+
+            return resultado;
         }
     }
 }

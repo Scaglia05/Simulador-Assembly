@@ -13,10 +13,11 @@ namespace Simulador_Assembly_Final.Classes {
         public int CyclesJ { get; set; }
 
         // Tempo de um único ciclo de clock em segundos
-        public decimal TempoClockUnicoSegundos => 1m / (ClockMHz * 1_000_000m);
+        public decimal TempoClockUnicoSegundos { get; set; }
 
         // Tempo total acumulado em segundos (você pode somar com base nos ciclos executados)
         public decimal ClockTotalSegundos { get; set; }
+
 
         public Dictionary<string, int> Labels { get; set; } = new();
         public Dictionary<string, int> Registradores { get; set; } = TabelaInstrucoes.Registradores.CriarRegistradores();
@@ -29,6 +30,14 @@ namespace Simulador_Assembly_Final.Classes {
                 Thread.Sleep(milissegundos);
             }
         }
+
+        public async Task<decimal> ObterTempoMs(decimal Clock) {
+
+            decimal tempoSegundos = 1 / (Clock * 1_000_000m);
+            decimal tempoMilissegundos = tempoSegundos * 1000;
+            return tempoMilissegundos;
+        }
+
 
 
         // Conversão de registradores do estilo $t0, $s1, etc. para seus números
@@ -133,6 +142,102 @@ namespace Simulador_Assembly_Final.Classes {
             "jr" => 8,
             _ => 0
         };
+
+
+
+        public static void ExecutarPrograma(string filePath, int cyclesI, int cyclesJ, int cyclesR, decimal tempoClockUnicoSegundos, LinhaExecutada ultimaInstrucaoExecutada = null) {
+            MemoriaInstrucao memoriaInstrucao = new();
+            Memoria memoria = new Memoria();
+            var labels = new Dictionary<string, int>();
+            var registradores = TabelaInstrucoes.Registradores.CriarRegistradores();
+
+            var ciclosInstrucoes = Instrucoes.ParseWordsToArray(
+                filePath,
+                cyclesI,
+                cyclesJ,
+                cyclesR,
+                tempoClockUnicoSegundos,
+                memoriaInstrucao
+            );
+
+            var linhasPrograma = File.ReadAllLines(filePath);
+
+            // Identifica labels
+            for (int i = 0; i < linhasPrograma.Length; i++) {
+                var linha = linhasPrograma[i].Trim();
+                if (string.IsNullOrWhiteSpace(linha) || linha.StartsWith("#")) continue;
+
+                if (linha.EndsWith(":")) {
+                    string nomeLabel = linha.Substring(0, linha.Length - 1).Trim();
+                    labels[nomeLabel] = i;
+                }
+            }
+
+            Instrucoes instrucoes = new Instrucoes();
+
+            // Começa após a última instrução executada (se houver)
+            int pc = ultimaInstrucaoExecutada != null ? ultimaInstrucaoExecutada.Indice + 1 : 0;
+
+            while (pc < linhasPrograma.Length) {
+                var linha = linhasPrograma[pc].Trim();
+
+                if (string.IsNullOrWhiteSpace(linha) || linha.StartsWith("#") || linha.EndsWith(":")) {
+                    pc++;
+                    continue;
+                }
+
+                var (instrucao, operandos) = Instrucoes.ParseInstrucao(linha);
+
+                if (!string.IsNullOrEmpty(instrucao) && operandos != null) {
+                    // Salva a instrução executada
+                    memoriaInstrucao.LinhasExecutadas.Add(new LinhaExecutada {
+                        Indice = pc,
+                        Instrucao = linha
+                    });
+
+                    Totalizador.TotalInstrucoes++;
+
+                    if (ciclosInstrucoes.TryGetValue(instrucao, out int ciclosInstrucao)) {
+                        Totalizador.TotalCiclos += ciclosInstrucao;
+                    }
+
+                    instrucoes.Executar(
+                        instrucao,
+                        operandos,
+                        registradores,
+                        memoria,
+                        labels,
+                        pc,
+                        ciclosInstrucoes,
+                        tempoClockUnicoSegundos,
+                        memoriaInstrucao
+                    );
+
+                    if (TabelaInstrucoes.Instrucoes.TryGetValue(instrucao, out var dicInstrucoes)) {
+                        int ciclos = dicInstrucoes.Item2;
+                        decimal tempoInstrucaoSegundos = ciclos * tempoClockUnicoSegundos;
+                        Simulador.AguardarTempo(tempoInstrucaoSegundos);
+                    }
+
+                    if (instrucao.StartsWith("j")) {
+                        string label = operandos.FirstOrDefault();
+                        if (labels.ContainsKey(label)) {
+                            pc = labels[label];
+                        } else {
+                            Console.WriteLine($"Erro: Label {label} não encontrada.");
+                            break;
+                        }
+                    } else if (instrucao.StartsWith("b")) {
+                        pc = registradores["PC"];
+                    } else {
+                        pc++;
+                    }
+                } else {
+                    Console.WriteLine($"Erro ao processar a linha: {linha}. A instrução não foi válida.");
+                    break;
+                }
+            }
+        }
 
     }
 

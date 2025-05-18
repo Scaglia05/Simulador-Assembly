@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 namespace Simulador_Assembly_Final.Classes {
     public class MemoriaInstrucao {
         private readonly Dictionary<int, byte> memoria = new();
+        public List<LinhaExecutada> LinhasExecutadas { get; set; } = new();
+
 
         public int LerPalavra(int endereco) {
             byte[] bytes = new byte[4];
@@ -46,11 +48,11 @@ namespace Simulador_Assembly_Final.Classes {
             memoria[endereco] = (byte)valor;
         }
 
-        public void MostrarEstadoMemoriaDados() {
-            if (memoria == null || !memoria.Any()) {
-                //Console.WriteLine("Memória vazia.");
-                return;
-            }
+        public List<string> ObterEstadoMemoriaDados() {
+            var resultado = new List<string>();
+
+            if (memoria == null || !memoria.Any())
+                return resultado;
 
             foreach (var grupo in memoria.OrderBy(p => p.Key).GroupBy(p => p.Key / 4)) {
                 int enderecoBase = grupo.First().Key / 4 * 4;
@@ -61,8 +63,10 @@ namespace Simulador_Assembly_Final.Classes {
                 }
 
                 int palavra = BitConverter.ToInt32(bytes, 0);
-                //Console.WriteLine($"Endereço {enderecoBase:D4}: 0x{palavra:X8}");
+                resultado.Add($"Endereço {enderecoBase:D4}: 0x{palavra:X8}");
             }
+
+            return resultado;
         }
     }
 }
