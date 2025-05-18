@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Compilador_Assembly_Teste01.Classes {
+namespace Simulador_Assembly_Final.Classes {
     public class MemoriaInstrucao {
         private readonly Dictionary<int, byte> memoria = new();
 
@@ -48,7 +48,7 @@ namespace Compilador_Assembly_Teste01.Classes {
 
         public void MostrarEstadoMemoriaDados() {
             if (memoria == null || !memoria.Any()) {
-                Console.WriteLine("Memória vazia.");
+                //Console.WriteLine("Memória vazia.");
                 return;
             }
 
@@ -61,7 +61,7 @@ namespace Compilador_Assembly_Teste01.Classes {
                 }
 
                 int palavra = BitConverter.ToInt32(bytes, 0);
-                Console.WriteLine($"Endereço {enderecoBase:D4}: 0x{palavra:X8}");
+                //Console.WriteLine($"Endereço {enderecoBase:D4}: 0x{palavra:X8}");
             }
         }
     }

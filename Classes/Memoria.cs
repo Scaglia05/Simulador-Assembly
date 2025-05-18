@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Compilador_Assembly_Teste01.Classes {
+namespace Simulador_Assembly_Final.Classes {
     public class Memoria {
         private readonly Dictionary<int, byte> memoria = new();
 
@@ -48,12 +48,12 @@ namespace Compilador_Assembly_Teste01.Classes {
 
         public void MostrarEstadoMemoriaDados() {
             if (!memoria.Any()) {
-                Console.WriteLine("Memória vazia.");
+                //Console.WriteLine("Memória vazia.");
                 return;
             }
 
             foreach (var par in memoria.OrderBy(e => e.Key)) {
-                Console.WriteLine($"Endereço {par.Key:D4}: {par.Value:X2}");
+                //Console.WriteLine($"Endereço {par.Key:D4}: {par.Value:X2}");
             }
         }
     }

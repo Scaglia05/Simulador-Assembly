@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Compilador_Assembly_Teste01.Classes {
+namespace Simulador_Assembly_Final.Classes {
     public static class Totalizador {
         public static int TotalInstrucoes { get; set; }
         public static int TotalCiclos { get; set; }

@@ -6,7 +6,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace Compilador_Assembly_Teste01.Classes {
+namespace Simulador_Assembly_Final.Classes {
     public class Instrucoes {
 
         public static Dictionary<string, int> ParseWordsToArray(string filePath, int TipoI, int TipoJ, int TipoR, decimal tempoClockUnicoSegundos, MemoriaInstrucao memoriaInstrucao) {
@@ -132,7 +132,7 @@ namespace Compilador_Assembly_Teste01.Classes {
                 Totalizador.TempoTotalSegundos += tempoInstrucaoSegundos;
 
                 // Você pode imprimir ou monitorar o tempo total a cada execução, se necessário
-                Console.WriteLine($"Instrução: {instrucao}, Ciclos: {ciclos}, Tempo gasto: {tempoInstrucaoSegundos} segundos, Tempo Total: {Totalizador.TempoTotalSegundos} segundos");
+                //Console.WriteLine($"Instrução: {instrucao}, Ciclos: {ciclos}, Tempo gasto: {tempoInstrucaoSegundos} segundos, Tempo Total: {Totalizador.TempoTotalSegundos} segundos");
 
 
                 // Converte a instrução para binário e hexadecimal e exibe
@@ -141,11 +141,11 @@ namespace Compilador_Assembly_Teste01.Classes {
 
                 // Mostra o estado dos registradores e da memória para cada iteração
                 MostrarEstadoRegistradoresEMemoria(registradores, memoria, instrucaoHexadecimal, memoriaInstrucao);
-                Console.WriteLine($"Instrução Binária: {instrucaoBinario}");
-                Console.WriteLine($"Instrução Hexadecimal: {instrucaoHexadecimal}");
+                //Console.WriteLine($"Instrução Binária: {instrucaoBinario}");
+                //Console.WriteLine($"Instrução Hexadecimal: {instrucaoHexadecimal}");
 
             } else {
-                Console.WriteLine($"Aviso: Instrução '{instrucao}' não tem ciclo definido. Ignorada no totalizador.");
+                //Console.WriteLine($"Aviso: Instrução '{instrucao}' não tem ciclo definido. Ignorada no totalizador.");
             }
 
             switch (instrucao) {
@@ -171,7 +171,7 @@ namespace Compilador_Assembly_Teste01.Classes {
                     int endereco = registradores[baseReg] + offset;
 
                     int valor = memoria.LerPalavra(endereco);
-                    Console.WriteLine($"[lw] Carregando memória[{endereco}] = {valor} em {destino}");
+                    //Console.WriteLine($"[lw] Carregando memória[{endereco}] = {valor} em {destino}");
 
                     registradores[destino] = valor;
                     break;
@@ -264,7 +264,7 @@ namespace Compilador_Assembly_Teste01.Classes {
                     if (labels.TryGetValue(Operands[0], out int linhaSalto)) {
                         registradores["PC"] = linhaSalto; // Atualiza o PC para a linha do rótulo
                     } else {
-                        Console.WriteLine($"Erro: Rótulo '{Operands[0]}' não encontrado.");
+                        //Console.WriteLine($"Erro: Rótulo '{Operands[0]}' não encontrado.");
                     }
                     break;
 
@@ -287,7 +287,7 @@ namespace Compilador_Assembly_Teste01.Classes {
             if (labels.ContainsKey(label)) {
                 return labels[label];  // Retorna o endereço da label de destino
             } else {
-                Console.WriteLine($"Erro: Label '{label}' não encontrada.");
+                //Console.WriteLine($"Erro: Label '{label}' não encontrada.");
                 return pc + 4;  // Retorna o próximo endereço de PC (caso não encontre a label)
             }
         }
@@ -295,14 +295,14 @@ namespace Compilador_Assembly_Teste01.Classes {
 
         // Método para mostrar o estado dos registradores e da memória
         public void MostrarEstadoRegistradoresEMemoria(Dictionary<string, int> registradores, Memoria memoria, string instrucaoHexadecimal, MemoriaInstrucao memoriaInstrucao) {
-            Console.WriteLine($"PC: {instrucaoHexadecimal}");
+            //Console.WriteLine($"PC: {instrucaoHexadecimal}");
 
-            Console.WriteLine("Estado dos Registradores:");
+            //Console.WriteLine("Estado dos Registradores:");
             foreach (var registrador in registradores) {
-                Console.WriteLine($"  {registrador.Key}: {registrador.Value}");
+                //Console.WriteLine($"  {registrador.Key}: {registrador.Value}");
             }
 
-            Console.WriteLine("Estado da Memória:");
+            //Console.WriteLine("Estado da Memória:");
             memoria.MostrarEstadoMemoriaDados();  // Mostra os primeiros 16 endereços de memória, você pode ajustar conforme necessário
             memoriaInstrucao.MostrarEstadoMemoriaDados();
 
