@@ -116,6 +116,8 @@
     private string LinhaAtualCompletaAssembly { get; set; }
     private string resultadoSimulacao = string.Empty;
 
+    private int ContadorIntrucoes = 0;
+    private int qtdCiclosAnteriores = 0;
 
     private async Task ExecutarSimulacaoAsync()
     {
@@ -180,6 +182,7 @@
         LinhasPrograma = new();
         MemoriaPrograma = new();
         LinhaAtualCompletaAssembly = string.Empty;
+        ContadorIntrucoes = 0;
         Totalizador.Reset(); // Supondo que exista um método estático para resetar os totais
 
         StateHasChanged(); // Garante que a interface seja atualizada
@@ -188,6 +191,18 @@
 
     private async Task ExecutarClock()
     {
+        if (ContadorIntrucoes == 0) { 
+        }
+        else if (ContadorIntrucoes > 0)
+        {
+            ExecutandoDelay = true;
+            await simuladorObj.AguardarTempo(simuladorObj.TempoClockUnicoSegundos);
+            ExecutandoDelay = false;
+            ContadorIntrucoes = qtdCiclosAnteriores - ContadorIntrucoes;
+            StateHasChanged();
+            return;
+        }
+
         while (linhaAtual < LinhasPrograma.Count)
         {
             ExecutandoDelay = true;
@@ -201,6 +216,7 @@
                 continue;
             }
 
+            ContadorIntrucoes++;
             var (instrucao, operandos) = Instrucoes.ParseInstrucao(linha);
 
             if (!string.IsNullOrEmpty(instrucao) && operandos != null)
@@ -244,11 +260,13 @@
                 if (TabelaInstrucoes.Instrucoes.TryGetValue(instrucao, out var dicInstrucoes))
                 {
                     int ciclos = dicInstrucoes.Item2;
-                    await simuladorObj.AguardarTempo(ciclos, simuladorObj.TempoClockUnicoSegundos);
+                    await simuladorObj.AguardarTempo(simuladorObj.TempoClockUnicoSegundos);
+                    qtdCiclosAnteriores = ciclos;
                 }
                 ExecutandoDelay = false;
                 StateHasChanged();
-
+                ContadorIntrucoes = qtdCiclosAnteriores - ContadorIntrucoes;
+                qtdCiclosAnteriores--;
                 break; // Executou uma instrução, sai do loop
             }
             else

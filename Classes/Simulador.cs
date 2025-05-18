@@ -21,9 +21,8 @@ namespace Simulador_Assembly_Final.Classes {
         public Memoria Memoria { get; set; } = new();
 
 
-        public async Task AguardarTempo(int ciclos, int tempoPorCicloEmMs) {
-            int tempoTotalMs = ciclos * tempoPorCicloEmMs;
-            await Task.Delay(tempoTotalMs);
+        public async Task AguardarTempo(int tempoPorCicloEmMs) {
+            await Task.Delay(tempoPorCicloEmMs);
         }
 
         public Task<int> ObterTempoMs(decimal clockEmMHz) {
