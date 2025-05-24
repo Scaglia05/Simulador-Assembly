@@ -68,6 +68,15 @@ namespace Simulador_Assembly_Final.Classes {
 
             return resultado;
         }
+        public string ObterInstrucaoHexadecimal(string instrucao, int endereco) {
+            Instrucoes instAssembly = new();
+            if (string.IsNullOrEmpty(instrucao)) {
+                return "  ";
+            }
+            var palavra = instAssembly.ObterHexadecimalLinha(instrucao);
+
+            return $"Endereço {endereco:D4}: 0x{palavra:X8}";
+        }
     }
 }
 

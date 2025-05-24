@@ -44,7 +44,9 @@
 @if (mostrarModal)
 {
     <div style="position:fixed; inset:0; background-color:rgba(0,0,0,0.5); display:flex; justify-content:center; align-items:center; z-index:1000;">
-        <div style="background:#fff; padding:2rem; border-radius:10px; min-width:300px; box-shadow:0 0 10px #000;">
+
+        <div class="modal-container" style="background:#fff; padding:2rem; border-radius:10px; min-width:300px; box-shadow:0 0 10px #000;">
+
             <h4>Execução Clock a Clock</h4>
 
             <div class="painel-execucao">
@@ -63,18 +65,31 @@
                         <div>@item</div>
                     }
                 </div>
+            </div>
 
-                <div class="bloco">
+            <div class="painel-execucao">
+                <div class="bloco bloco-longo">
                     <strong>Memória de Programa</strong>
                     @foreach (var linha in memoriaInstrucao.ObterEstadoMemoriaDados())
                     {
                         <div class="linha-execucao">@linha</div>
                     }
                 </div>
+            </div>
 
+            <div class="painel-execucao">
                 <div class="bloco">
                     <strong>Linha em execução</strong>
-                    <div>@instrucoes.ObterHexadecimalLinha(LinhaAtualCompletaAssembly)</div>
+                    <div>
+                        @memoriaInstrucao.ObterInstrucaoHexadecimal(LinhaAtualCompletaAssembly, (linhaAtual - 1) * 4)
+                    </div>
+                </div>
+
+                <div class="bloco">
+                    <strong>Linha em execução (Assembly)</strong>
+                    <div>
+                        @LinhaAtualCompletaAssembly
+                    </div>
                 </div>
             </div>
 
@@ -88,13 +103,21 @@
                 }
                 else
                 {
-                    <p><strong>Simulação concluída.</strong></p>
+                    <div class="bloco" style="display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+                        <strong>Resultados Finais</strong>
+                        <div>
+                            Total de Instruções Executadas: @Totalizador.TotalInstrucoes<br />
+                            Total de Ciclos: @Totalizador.TotalCiclos<br />
+                            Tempo Total Estimado de Execução: @Totalizador.TempoTotalSegundos segundos
+                        </div>
+                    </div>
                 }
 
                 <button class="btn-secondary" @onclick="FecharModal">Fechar</button>
             </div>
         </div>
     </div>
+
 }
 
 
@@ -136,10 +159,10 @@
         simuladorObj.TempoClockUnicoSegundos = await simuladorObj.ObterTempoMs(simuladorObj.ClockMHz);
 
         resultadoSimulacao = $"--- Parâmetros Iniciais ---\n" +
-            $"Arquivo: {simuladorObj.FilePath}\n" +
-            $"Clock: {simuladorObj.ClockMHz} MHz\n" +
-            $"Tempo de um ciclo de clock: {simuladorObj.TempoClockUnicoSegundos} segundos\n" +
-            $"Ciclos tipo R: {simuladorObj.CyclesR} | Ciclos tipo I: {simuladorObj.CyclesI} | Ciclos tipo J: {simuladorObj.CyclesJ}\n\n";
+        $"Arquivo: {simuladorObj.FilePath}\n" +
+        $"Clock: {simuladorObj.ClockMHz} MHz\n" +
+        $"Tempo de um ciclo de clock: {simuladorObj.TempoClockUnicoSegundos} segundos\n" +
+        $"Ciclos tipo R: {simuladorObj.CyclesR} | Ciclos tipo I: {simuladorObj.CyclesI} | Ciclos tipo J: {simuladorObj.CyclesJ}\n\n";
 
         Registradores = TabelaInstrucoes.Registradores.CriarRegistradores();
         LinhasPrograma = File.ReadAllLines(simuladorObj.FilePath).ToList();
@@ -191,7 +214,8 @@
 
     private async Task ExecutarClock()
     {
-        if (ContadorIntrucoes == 0) { 
+        if (ContadorIntrucoes == 0)
+        {
         }
         else if (ContadorIntrucoes > 0)
         {
@@ -227,12 +251,12 @@
                     instrucoes = new Instrucoes();
 
                 var ciclosInstrucoes = Instrucoes.ParseWordsToArray(
-                    simuladorObj.FilePath,
-                    simuladorObj.CyclesI,
-                    simuladorObj.CyclesJ,
-                    simuladorObj.CyclesR,
-                    simuladorObj.TempoClockUnicoSegundos,
-                    memoriaInstrucao
+                simuladorObj.FilePath,
+                simuladorObj.CyclesI,
+                simuladorObj.CyclesJ,
+                simuladorObj.CyclesR,
+                simuladorObj.TempoClockUnicoSegundos,
+                memoriaInstrucao
                 );
 
                 if (ciclosInstrucoes.TryGetValue(instrucao, out int ciclosInstrucao))
@@ -277,17 +301,8 @@
             }
         }
 
-        if (linhaAtual >= LinhasPrograma.Count)
-        {
-            resultadoSimulacao += $"\n--- Resultados Finais ---\n" +
-                                  $"Total de Instruções Executadas: {Totalizador.TotalInstrucoes}\n" +
-                                  $"Total de Ciclos: {Totalizador.TotalCiclos}\n" +
-                                  $"Tempo Total Estimado de Execução: {Totalizador.TempoTotalSegundos} segundos";
-        }
-
         StateHasChanged();
     }
-
 }
 <style>
     /* Container do formulário */
@@ -360,7 +375,7 @@
         overflow-y: auto;
     }
 
-    /* Container dos blocos internos */
+    /* Painel de execução geral */
     .painel-execucao {
         display: flex;
         flex-wrap: wrap;
@@ -369,18 +384,29 @@
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
 
-    /* Cada bloco dentro do painel */
+    /* Blocos lado a lado */
     .bloco {
-        flex: 1 1 200px;
+        flex: 1 1 45%;
         background: #f7f9fc;
         border-radius: 8px;
         padding: 1rem;
         box-shadow: inset 0 0 5px rgba(0,0,0,0.05);
-        max-height: 200px;
+        max-height: calc(30vh); /* ajusta para caber na tela */
         overflow-y: auto;
     }
 
-    /* Destaque para a linha atual em execução */
+    /* Bloco que ocupa linha inteira */
+    .bloco-longo {
+        flex: 1 1 100%;
+        background: #f7f9fc;
+        border-radius: 8px;
+        padding: 1rem;
+        box-shadow: inset 0 0 5px rgba(0,0,0,0.05);
+        max-height: calc(30vh);
+        overflow-y: auto;
+    }
+
+    /* Linha atual destacada */
     .linha-execucao {
         padding: 3px 5px;
         border-radius: 4px;
@@ -397,8 +423,14 @@
         color: #0f5132;
     }
 
-    /* Botões do modal alinhados */
+    /* Modal adaptável à altura da tela */
+    .modal-container {
+        max-height: 95vh;
+        overflow-y: auto;
+    }
+
     .modal-buttons {
         text-align: right;
     }
 </style>
+
