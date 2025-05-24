@@ -81,7 +81,7 @@
                 <div class="bloco">
                     <strong>Linha em execução</strong>
                     <div>
-                        @memoriaInstrucao.ObterInstrucaoHexadecimal(LinhaAtualCompletaAssembly, (linhaAtual - 1) * 4)
+                        @memoriaInstrucao.ObterInstrucaoHexadecimal(LinhaAtualCompletaAssembly, LinhaAtualReferencia)
                     </div>
                 </div>
 
@@ -106,9 +106,10 @@
                     <div class="bloco" style="display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
                         <strong>Resultados Finais</strong>
                         <div>
-                            Total de Instruções Executadas: @Totalizador.TotalInstrucoes<br />
+                            Total de Instruções: @TotalInstrucoes<br />
                             Total de Ciclos: @Totalizador.TotalCiclos<br />
-                            Tempo Total Estimado de Execução: @Totalizador.TempoTotalSegundos segundos
+                            Tempo Total Estimado de Execução: @simuladorObj.TempoTotalEstimado;
+                            <br />
                         </div>
                     </div>
                 }
@@ -132,9 +133,12 @@
     private List<string> MemoriaPrograma = new();
     private List<string> LinhasPrograma { get; set; } = new();
 
+    private int ciclosRestantesInstrucao = 0;
+    private int LinhaAtualReferencia { get; set; }
+    private int TotalInstrucoes { get; set; }
     private int linhaAtual = 0;
     private bool mostrarModal = false;
-    private bool TemMaisInstrucoes => linhaAtual < LinhasPrograma.Count - 1;
+    private bool TemMaisInstrucoes => linhaAtual < LinhasPrograma.Count || ciclosRestantesInstrucao > 0;
     private bool ExecutandoDelay = false;
     private string LinhaAtualCompletaAssembly { get; set; }
     private string resultadoSimulacao = string.Empty;
@@ -174,6 +178,7 @@
         Labels.Clear();
         for (int i = 0; i < LinhasPrograma.Count; i++)
         {
+
             var linha = LinhasPrograma[i].Trim();
 
             if (linha.EndsWith(":"))
@@ -183,7 +188,6 @@
             }
         }
 
-        // Parse das instruções
         instrucoes = new Instrucoes();
         linhaAtual = 0;
         mostrarModal = true;
@@ -195,7 +199,7 @@
         mostrarModal = false;
         linhaAtual = 0;
         resultadoSimulacao = string.Empty;
-        simuladorObj = new(); // Cria um novo objeto, limpando os campos do formulário
+        simuladorObj = new();
         memoriaInstrucao = new();
         memoria = new();
         instrucoes = new();
@@ -204,106 +208,106 @@
         Registradores = new();
         LinhasPrograma = new();
         MemoriaPrograma = new();
+        ciclosRestantesInstrucao = 0;
         LinhaAtualCompletaAssembly = string.Empty;
         ContadorIntrucoes = 0;
-        Totalizador.Reset(); // Supondo que exista um método estático para resetar os totais
+        Totalizador.Reset();
 
-        StateHasChanged(); // Garante que a interface seja atualizada
+        StateHasChanged();
     }
 
 
     private async Task ExecutarClock()
     {
-        if (ContadorIntrucoes == 0)
-        {
-        }
-        else if (ContadorIntrucoes > 0)
+        // Se ainda há ciclos pendentes da instrução atual
+        if (ciclosRestantesInstrucao > 0)
         {
             ExecutandoDelay = true;
             await simuladorObj.AguardarTempo(simuladorObj.TempoClockUnicoSegundos);
+            ciclosRestantesInstrucao--;
             ExecutandoDelay = false;
-            ContadorIntrucoes = qtdCiclosAnteriores - ContadorIntrucoes;
+
+            // Só atualiza UI, sem avançar para próxima instrução
             StateHasChanged();
             return;
         }
 
+        // Caso contrário, buscar nova instrução
         while (linhaAtual < LinhasPrograma.Count)
         {
-            ExecutandoDelay = true;
-            StateHasChanged();
             LinhaAtualCompletaAssembly = string.Empty;
-            var linha = LinhasPrograma[linhaAtual].Trim();
-            LinhaAtualCompletaAssembly = linha;
+            var linha = LinhasPrograma[linhaAtual].Split('#')[0].Trim();
+
+            // Pula comentários ou labels
             if (string.IsNullOrWhiteSpace(linha) || linha.StartsWith("#") || linha.EndsWith(":"))
             {
                 linhaAtual++;
                 continue;
             }
 
-            ContadorIntrucoes++;
+            // Parse da instrução
             var (instrucao, operandos) = Instrucoes.ParseInstrucao(linha);
-
-            if (!string.IsNullOrEmpty(instrucao) && operandos != null)
+            if (string.IsNullOrEmpty(instrucao) || operandos == null)
             {
-                Totalizador.TotalInstrucoes++;
+                resultadoSimulacao = $"Erro ao processar a linha: {linha}. A instrução não foi válida.";
+                mostrarModal = false;
+                return;
+            }
 
-                if (instrucoes == null)
-                    instrucoes = new Instrucoes();
+            if (instrucoes == null)
+                instrucoes = new Instrucoes();
 
-                var ciclosInstrucoes = Instrucoes.ParseWordsToArray(
+            var ciclosInstrucoes = Instrucoes.ParseWordsToArray(
                 simuladorObj.FilePath,
                 simuladorObj.CyclesI,
                 simuladorObj.CyclesJ,
                 simuladorObj.CyclesR,
                 simuladorObj.TempoClockUnicoSegundos,
                 memoriaInstrucao
-                );
+            );
 
-                if (ciclosInstrucoes.TryGetValue(instrucao, out int ciclosInstrucao))
-                    Totalizador.TotalCiclos += ciclosInstrucao;
-
-                instrucoes.Executar(instrucao, operandos, simuladorObj.Registradores, memoria, Labels, linhaAtual, ciclosInstrucoes, simuladorObj.TempoClockUnicoSegundos, memoriaInstrucao);
-
-                if (instrucao.StartsWith("j"))
-                {
-                    string label = operandos.FirstOrDefault();
-                    if (Labels.ContainsKey(label))
-                        linhaAtual = Labels[label];
-                    else
-                        resultadoSimulacao = $"Erro: Label {label} não encontrada.";
-                }
-                else if (instrucao.StartsWith("b"))
-                {
-                    linhaAtual = simuladorObj.Registradores["PC"];
-                }
-                else
-                {
-                    linhaAtual++;
-                }
-
-                if (TabelaInstrucoes.Instrucoes.TryGetValue(instrucao, out var dicInstrucoes))
-                {
-                    int ciclos = dicInstrucoes.Item2;
-                    await simuladorObj.AguardarTempo(simuladorObj.TempoClockUnicoSegundos);
-                    qtdCiclosAnteriores = ciclos;
-                }
-                ExecutandoDelay = false;
-                StateHasChanged();
-                ContadorIntrucoes = qtdCiclosAnteriores - ContadorIntrucoes;
-                qtdCiclosAnteriores--;
-                break; // Executou uma instrução, sai do loop
+            // Define ciclos restantes
+            if (TabelaInstrucoes.Instrucoes.TryGetValue(instrucao, out var dicInstrucoes))
+            {
+                ciclosRestantesInstrucao = dicInstrucoes.Item2 - 1; // Já vai executar 1 ciclo agora
             }
             else
             {
-                resultadoSimulacao = $"Erro ao processar a linha: {linha}. A instrução não foi válida.";
-                mostrarModal = false;
-                break;
+                ciclosRestantesInstrucao = 0; // Se não encontrou, considera como 1 ciclo
             }
-        }
 
-        StateHasChanged();
+            // Executar a instrução
+            instrucoes.Executar(instrucao, operandos, simuladorObj.Registradores, memoria, Labels, linhaAtual, ciclosInstrucoes, simuladorObj.TempoClockUnicoSegundos, memoriaInstrucao, simuladorObj);
+            TotalInstrucoes = ciclosInstrucoes.Count();
+            LinhaAtualCompletaAssembly = linha;
+            LinhaAtualReferencia = (linhaAtual * 4);
+            if (instrucao.StartsWith("j"))
+            {
+                string label = operandos.FirstOrDefault();
+                if (Labels.ContainsKey(label))
+                    linhaAtual = Labels[label];
+                else
+                    resultadoSimulacao = $"Erro: Label {label} não encontrada.";
+            }
+            else if (instrucao.StartsWith("b"))
+            {
+                linhaAtual = simuladorObj.Registradores["PC"];
+            }
+            else
+            {
+                linhaAtual++;
+            }
+            // Executa primeiro ciclo agora
+            ExecutandoDelay = true;
+            await simuladorObj.AguardarTempo(simuladorObj.TempoClockUnicoSegundos);
+            ExecutandoDelay = false;
+
+            StateHasChanged();
+            break; // Sai, aguardando o próximo clique
+        }
     }
 }
+
 <style>
     /* Container do formulário */
     .form-container {

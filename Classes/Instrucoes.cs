@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 namespace Simulador_Assembly_Final.Classes {
     public class Instrucoes {
 
-        public static Dictionary<string, int> ParseWordsToArray(string filePath, int TipoI, int TipoJ, int TipoR, decimal tempoClockUnicoSegundos, MemoriaInstrucao memoriaInstrucao) {
+        public static Dictionary<string, int> ParseWordsToArray(string filePath, int TipoI, int TipoJ, int TipoR, double tempoClockUnicoSegundos, MemoriaInstrucao memoriaInstrucao) {
             var resultado = new Dictionary<string, int>();
             var linhas = File.ReadAllLines(filePath);
             int endereco = 0;
@@ -112,7 +112,7 @@ namespace Simulador_Assembly_Final.Classes {
         }
 
 
-        public void Executar(string instrucao, List<string> Operands, Dictionary<string, int> registradores, Memoria memoria, Dictionary<string, int> labels, int pc, Dictionary<string, int> ciclosInstrucoes, decimal tempoClockUnicoSegundos, MemoriaInstrucao memoriaInstrucao) {
+        public async void Executar(string instrucao, List<string> Operands, Dictionary<string, int> registradores, Memoria memoria, Dictionary<string, int> labels, int pc, Dictionary<string, int> ciclosInstrucoes, double tempoClockUnicoSegundos, MemoriaInstrucao memoriaInstrucao, Simulador simuladorObj) {
             // Totalização de instrução
             Totalizador.TotalInstrucoes++;
             Simulador simulador = new Simulador();
@@ -124,16 +124,17 @@ namespace Simulador_Assembly_Final.Classes {
 
                 // Totaliza os ciclos
                 Totalizador.TotalCiclos += ciclos;
+                simuladorObj.TempoTotalEstimado = await simulador.ObterTempoTotalEstimado((double)simuladorObj.ClockMHz);
 
                 // Calcula o tempo gasto para a instrução (tempo por ciclo multiplicado pelos ciclos)
-                decimal tempoInstrucaoSegundos = tempoClockUnicoSegundos * ciclos;
+                double tempoInstrucaoSegundos = tempoClockUnicoSegundos * ciclos;
 
                 // Atualiza o tempo total de execução
                 Totalizador.TempoTotalSegundos += tempoInstrucaoSegundos;
 
                 // Você pode imprimir ou monitorar o tempo total a cada execução, se necessário
                 //Console.WriteLine($"Instrução: {instrucao}, Ciclos: {ciclos}, Tempo gasto: {tempoInstrucaoSegundos} segundos, Tempo Total: {Totalizador.TempoTotalSegundos} segundos");
-
+                 
 
                 // Converte a instrução para binário e hexadecimal e exibe
                 string instrucaoBinario = simulador.ConverterInstrucaoParaBinario(instrucao, Operands);

@@ -7,13 +7,14 @@ using System.Threading.Tasks;
 namespace Simulador_Assembly_Final.Classes {
     public class Simulador {
         public string FilePath { get; set; }
-        public decimal ClockMHz { get; set; }
+        public double ClockMHz { get; set; }
         public int CyclesR { get; set; }
         public int CyclesI { get; set; }
         public int CyclesJ { get; set; }
 
         // Tempo de um único ciclo de clock em segundos
-        public int TempoClockUnicoSegundos { get; set; }
+        public double TempoClockUnicoSegundos { get; set; }
+        public string TempoTotalEstimado { get; set; }
 
 
         public Dictionary<string, int> Labels { get; set; } = new();
@@ -21,16 +22,24 @@ namespace Simulador_Assembly_Final.Classes {
         public Memoria Memoria { get; set; } = new();
 
 
-        public async Task AguardarTempo(int tempoPorCicloEmMs) {
-            await Task.Delay(tempoPorCicloEmMs);
+        public async Task AguardarTempo(double tempoPorCicloEmMs) {
+            int tempoDelay = (int)Math.Max(Math.Round(tempoPorCicloEmMs), 1); 
+            await Task.Delay(tempoDelay);
         }
 
-        public Task<int> ObterTempoMs(decimal clockEmMHz) {
-            decimal tempoSegundos = 1 / (clockEmMHz * 1_000_000m);
-            decimal tempoMilissegundos = tempoSegundos * 1000;
-            return Task.FromResult((int)Math.Round(tempoMilissegundos));
+        public async Task<double> ObterTempoMs(double clockEmMHz) {
+            return 1.0 / (clockEmMHz * 1_000); 
         }
 
+        public double ObterTempoCicloEmSegundos(double clockEmMHz) {
+            return 1.0 / (clockEmMHz * 1_000_000);
+        }
+
+        public async Task<string> ObterTempoTotalEstimado(double ClockMHz) {
+            double tempoCicloSegundos = this.ObterTempoCicloEmSegundos((double)ClockMHz);
+            double tempoTotalEmSegundos = Totalizador.TotalCiclos * tempoCicloSegundos;
+            return tempoTotalEmSegundos.ToString("E2") + " segundos";
+        }
 
         // Conversão de registradores do estilo $t0, $s1, etc. para seus números
         private static readonly Dictionary<string, int> MapaRegistradores = new()
@@ -134,102 +143,6 @@ namespace Simulador_Assembly_Final.Classes {
             "jr" => 8,
             _ => 0
         };
-
-
-
-        public static void ExecutarPrograma(string filePath, int cyclesI, int cyclesJ, int cyclesR, decimal tempoClockUnicoSegundos, LinhaExecutada ultimaInstrucaoExecutada = null) {
-            MemoriaInstrucao memoriaInstrucao = new();
-            Memoria memoria = new Memoria();
-            var labels = new Dictionary<string, int>();
-            var registradores = TabelaInstrucoes.Registradores.CriarRegistradores();
-
-            var ciclosInstrucoes = Instrucoes.ParseWordsToArray(
-                filePath,
-                cyclesI,
-                cyclesJ,
-                cyclesR,
-                tempoClockUnicoSegundos,
-                memoriaInstrucao
-            );
-
-            var linhasPrograma = File.ReadAllLines(filePath);
-
-            // Identifica labels
-            for (int i = 0; i < linhasPrograma.Length; i++) {
-                var linha = linhasPrograma[i].Trim();
-                if (string.IsNullOrWhiteSpace(linha) || linha.StartsWith("#")) continue;
-
-                if (linha.EndsWith(":")) {
-                    string nomeLabel = linha.Substring(0, linha.Length - 1).Trim();
-                    labels[nomeLabel] = i;
-                }
-            }
-
-            Instrucoes instrucoes = new Instrucoes();
-
-            // Começa após a última instrução executada (se houver)
-            int pc = ultimaInstrucaoExecutada != null ? ultimaInstrucaoExecutada.Indice + 1 : 0;
-
-            while (pc < linhasPrograma.Length) {
-                var linha = linhasPrograma[pc].Trim();
-
-                if (string.IsNullOrWhiteSpace(linha) || linha.StartsWith("#") || linha.EndsWith(":")) {
-                    pc++;
-                    continue;
-                }
-
-                var (instrucao, operandos) = Instrucoes.ParseInstrucao(linha);
-
-                if (!string.IsNullOrEmpty(instrucao) && operandos != null) {
-                    // Salva a instrução executada
-                    memoriaInstrucao.LinhasExecutadas.Add(new LinhaExecutada {
-                        Indice = pc,
-                        Instrucao = linha
-                    });
-
-                    Totalizador.TotalInstrucoes++;
-
-                    if (ciclosInstrucoes.TryGetValue(instrucao, out int ciclosInstrucao)) {
-                        Totalizador.TotalCiclos += ciclosInstrucao;
-                    }
-
-                    instrucoes.Executar(
-                        instrucao,
-                        operandos,
-                        registradores,
-                        memoria,
-                        labels,
-                        pc,
-                        ciclosInstrucoes,
-                        tempoClockUnicoSegundos,
-                        memoriaInstrucao
-                    );
-
-                    if (TabelaInstrucoes.Instrucoes.TryGetValue(instrucao, out var dicInstrucoes)) {
-                        int ciclos = dicInstrucoes.Item2;
-                        decimal tempoInstrucaoSegundos = ciclos * tempoClockUnicoSegundos;
-                        //Simulador.AguardarTempo(tempoInstrucaoSegundos);
-                    }
-
-                    if (instrucao.StartsWith("j")) {
-                        string label = operandos.FirstOrDefault();
-                        if (labels.ContainsKey(label)) {
-                            pc = labels[label];
-                        } else {
-                            Console.WriteLine($"Erro: Label {label} não encontrada.");
-                            break;
-                        }
-                    } else if (instrucao.StartsWith("b")) {
-                        pc = registradores["PC"];
-                    } else {
-                        pc++;
-                    }
-                } else {
-                    Console.WriteLine($"Erro ao processar a linha: {linha}. A instrução não foi válida.");
-                    break;
-                }
-            }
-        }
 
     }
 
