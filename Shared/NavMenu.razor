@@ -13,11 +13,6 @@
             <NavLink class="nav-link" href="/simulador">
                 <span class="oi oi-cog" aria-hidden="true"></span> Simulador Assembly
             </NavLink>
-        </div>    
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="/modal-teste">
-                <span class="oi oi-cog" aria-hidden="true"></span> Testess
-            </NavLink>
         </div>
     </nav>
 </div>
@@ -32,3 +27,78 @@
         collapseNavMenu = !collapseNavMenu;
     }
 }
+
+<style>
+    <style >
+    .top-bar {
+        background-color: #0e252f;
+        border-bottom: 2px solid #1e7a87;
+        padding: 1rem 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-family: 'Courier New', monospace;
+    }
+
+    .top-bar .brand {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #81f1ff;
+        text-decoration: none;
+        text-transform: uppercase;
+    }
+
+    .nav-toggle-btn {
+        background: none;
+        border: 1px solid #1e7a87;
+        padding: 0.4rem 0.6rem;
+        color: #81f1ff;
+        font-family: inherit;
+        cursor: pointer;
+        border-radius: 4px;
+        font-size: 1rem;
+    }
+
+    .sim-nav {
+        background-color: #0a161b;
+        padding: 1rem;
+        border-bottom: 1px solid #1e7a87;
+        display: none;
+        flex-direction: column;
+    }
+
+        .sim-nav.visible {
+            display: flex;
+        }
+
+        .sim-nav a {
+            padding: 0.5rem;
+            margin-bottom: 0.3rem;
+            color: #81f1ff;
+            background-color: #122e38;
+            text-decoration: none;
+            border-radius: 4px;
+            transition: background 0.2s ease;
+        }
+
+            .sim-nav a:hover {
+                background-color: #1e7a8755;
+            }
+</style>
+
+<div class="top-bar">
+    <a href="/" class="brand">Simulador MIPS</a>
+    <button class="nav-toggle-btn" onclick="toggleMenu()">MENU</button>
+</div>
+
+<nav id="simNav" class="sim-nav">
+    <a href="/simulador">Simulador Assembly</a>
+</nav>
+
+</style>
+<script>
+    function toggleMenu() {
+        const nav = document.getElementById('simNav');
+        nav.classList.toggle('visible');
+    }
+</script>

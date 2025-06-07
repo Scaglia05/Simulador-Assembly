@@ -1,15 +1,85 @@
-﻿@inherits LayoutComponentBase
+﻿<!-- SimuladorMIPSLayout.razor -->
+@inherits LayoutComponentBase
+<PageTitle>Simulador MIPS</PageTitle>
 
-<PageTitle>Simulador_Assembly_Final</PageTitle>
+<style>
+    body, html {
+        margin: 0;
+        padding: 0;
+        background-color: #0d1b21;
+        font-family: 'Courier New', Courier, monospace;
+        color: #a7d4dd;
+        height: 100%;
+    }
 
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
+    .simulator-container {
+        display: flex;
+        height: 100vh;
+        overflow: hidden;
+    }
 
-    <main>
-        <article class="content px-4">
+    .terminal-sidebar {
+        width: 240px;
+        background-color: #0e252f;
+        border-right: 2px solid #1e7a87;
+        padding: 1rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+        .terminal-sidebar h1 {
+            font-size: 1.4rem;
+            color: #81f1ff;
+            margin-bottom: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .terminal-sidebar nav a {
+            display: block;
+            color: #81f1ff;
+            padding: 0.5rem;
+            margin-bottom: 0.5rem;
+            background: #122e38;
+            border-radius: 4px;
+            text-decoration: none;
+            transition: background 0.2s ease;
+        }
+
+            .terminal-sidebar nav a:hover {
+                background: #1e7a8755;
+            }
+
+    .terminal-main {
+        flex-grow: 1;
+        background-color: #0a161b;
+        padding: 2rem;
+        overflow-y: auto;
+    }
+
+        .terminal-main .content {
+            background-color: #0e252f;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid #1e7a87;
+            box-shadow: inset 0 0 10px #1e7a8722;
+        }
+</style>
+
+<div class="simulator-container">
+    <aside class="terminal-sidebar">
+        <div>
+            <h1>SIMULADOR MIPS</h1>
+            <nav>
+                <a href="/simulador">Assembly</a>
+            </nav>
+        </div>
+    </aside>
+
+    <main class="terminal-main">
+        <div class="content">
             @Body
-        </article>
+        </div>
     </main>
 </div>
