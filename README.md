@@ -152,6 +152,13 @@ Passos rápidos:
 
 ---
 
+## Gerenciamento do Projeto
+
+Você pode acompanhar o progresso e as tarefas do projeto no Kanban do Trello:
+
+[Kanban do Projeto no Trello](https://trello.com/invite/b/680d30e40f94bc3bee2bc17a/ATTI6dbf5b171dd271bebf91144524f120bb58A3D19C/arq-comp-compilador-assembly)
+
+---
 ### ⚠️ Dicas importantes e cuidados
 
 - Utilize instruções MIPS válidas e operandos corretos  
