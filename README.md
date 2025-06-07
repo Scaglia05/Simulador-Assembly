@@ -152,7 +152,7 @@ Passos rápidos:
 
 ---
 
-## Gerenciamento do Projeto
+📋 ## Gerenciamento do Projeto
 
 Você pode acompanhar o progresso e as tarefas do projeto no Kanban do Trello:
 
