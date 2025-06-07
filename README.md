@@ -1,106 +1,142 @@
-# Simulador de Instruções MIPS com Controle de Clock em C#
+### 🚀 Simulador MIPS
 
-Este projeto é um simulador didático para execução passo a passo de programas escritos em linguagem assembly MIPS. Ele simula o ciclo de clock, a execução das instruções e o funcionamento básico dos registradores, memória e labels.
+Um simulador completo da arquitetura MIPS que permite interpretar, executar e analisar código assembly MIPS de forma detalhada, passo a passo, simulando o comportamento real da CPU, incluindo registradores, memória, saltos e cálculo de tempo baseado nos ciclos do clock.
+
+---
+### 📄 Formato do arquivo de código MIPS
+
+O simulador recebe como entrada um arquivo texto com o código assembly MIPS.
+Padrões e convenções:
+Cada instrução deve estar em uma linha separada.
+Comentários iniciam com # e são ignorados (tudo após # na linha).
+Instruções e operandos separados por espaços ou tabs.
+Operandos múltiplos separados por vírgulas , ou pontos ...
+Endereços com offset usam o formato offset(base), ex: lw $t0, 4($sp).
+Labels (rótulos) são linhas próprias, terminadas com :, usados para saltos.
+
+``main:
+    add $t0, $t1, $t2   # Soma $t1 e $t2 e guarda em $t0
+    lw  $t3, 4($sp)     # Carrega da memória em $sp+4 para $t3
+    beq $t0, $t3, end   # Se iguais, pula para end
+    sub $t0, $t0, $t1
+end:
+    sw  $t0, 0($sp)``
+    
+---
+
+### ⚙️ Funcionalidades
+
+▶️ Execução passo a passo do código assembly MIPS
+🔀 Suporte a labels e saltos condicionais/incondicionais (j, beq, bne, etc)
+⏳ Simulação de ciclos de clock para cálculo de tempo realista
+🧮 Visualização dinâmica dos registradores e memória
+📝 Parsing robusto de instruções, operandos, comentários e labels
+🔄 Avanço manual ou automático da execução
+💾 Conversão de instruções para binário e hexadecimal para validação
+📊 Monitoramento do estado da CPU e memória após cada instrução
 
 ---
 
-## Sumário
+###🛠️ Requisitos
 
-- [Descrição](#descrição)
-- [Funcionalidades](#funcionalidades)
-- [Requisitos](#requisitos)
-- [Como usar](#como-usar)
-- [Detalhes do código e arquitetura](#detalhes-do-código-e-arquitetura)
-- [O que evitar](#o-que-evitar)
-- [Contribuindo](#contribuindo)
-- [Licença](#licença)
-- [Contato](#contato)
+.NET 6.0 ou superior
+Visual Studio 2022 ou editor C# compatível
+Arquivo teste com instruções
+---
+### 🚀 Como utilizar
+
+Pré-requisitos
+Ambiente .NET configurado (Visual Studio, .NET CLI)
+Código MIPS em arquivo .asm seguindo o padrão
+Passo a passo
+Preparar o código MIPS
+Escreva seu código assembly em um arquivo texto com o formato explicado.
+Carregar código no simulador
+Use o método ParseWordsToArray para ler o arquivo e preparar a memória.
+Executar instruções
+Itere pela memória de instruções, executando linha a linha com o método Executar.
+Monitorar estado
+Após cada passo, visualize registradores, memória, instrução em binário/hex e tempo acumulado.
+
+Exemplo básico (C#):
+
+``Memoria memoria = new Memoria();
+MemoriaInstrucao memoriaInstrucao = new MemoriaInstrucao();
+var registradores = InicializarRegistradores();
+var labels = CarregarLabels(codigoAssembly);
+double tempoClock = 1.0 / 1_000_000; // 1 MHz = 1 microssegundo por ciclo
+var instrucoesECiclos = ParseWordsToArray("programa.asm", TipoI, TipoJ, TipoR, tempoClock, memoriaInstrucao);
+int pc = 0;
+bool executar = true;
+while (executar) {
+    var (instrucao, operandos) = ParseInstrucao(ObterLinhaDaMemoria(memoriaInstrucao, pc));
+    Executar(instrucao, operandos, registradores, memoria, labels, pc, ciclosInstrucoes, tempoClock, memoriaInstrucao, simuladorObj, false);
+    pc = registradores["PC"];
+    if (pc >= fimDoPrograma) executar = false;
+}``
 
 ---
 
-## Descrição
+### 📂 Inserção manual x leitura de arquivo
 
-Este simulador permite que você execute código assembly MIPS linha a linha, visualizando o estado dos registradores, memória e ponteiros. Ele respeita os ciclos por instrução para simular o tempo de clock, facilitando o entendimento do funcionamento interno de um processador RISC.
-
----
-
-## Funcionalidades
-
-- Execução passo a passo do código assembly MIPS
-- Suporte a labels, saltos condicionais e incondicionais (`j`, `b`, etc.)
-- Simulação de ciclos de clock por instrução (delay controlado)
-- Visualização do conteúdo dos registradores e memória em tempo real
-- Parsing de instruções e operandos, com tratamento de comentários e labels
-- Interface para avançar a execução manualmente ou automática
+Inserção manual: Pode-se passar o código diretamente como string, linha a linha, respeitando o formato.
+Leitura do arquivo: Processa o arquivo linha a linha, ignorando comentários e vazios, separando instruções e operandos para execução.
 
 ---
 
-## Requisitos
+###🧩 Como o parser interpreta as instruções 
 
-- .NET 6.0 ou superior (para executar a aplicação C#)
-- Visual Studio 2022 (ou editor compatível com C#)
-- Conhecimento básico em linguagem assembly MIPS (recomendado)
-  
+Remove comentários (#)
+Divide linha em instrução e operandos
+Separa operandos por vírgula ou ponto
+Trata operandos com offset e base (offset(base))
+Labels são identificados e armazenados para controle de saltos
+
 ---
 
-## Como usar
+### 🏗️ Como foi implementado?
 
-**Clone o repositório:**
-Abra o projeto no Visual Studio ou editor preferido.
-Configure o arquivo de entrada:
-Abra o arquivo onde o código assembly é carregado (exemplo: LinhasPrograma)
-Insira seu código assembly MIPS seguindo o formato padrão:
-Cada linha deve ser uma instrução válida
-Labels devem terminar com :
-Comentários iniciam com #
+Arquitetura Geral
+Parser: interpreta o código MIPS em instruções e operandos
+Simulador: executa as instruções e atualiza o estado da CPU e memória
+Tabela de Instruções: contém ciclos e características de cada instrução
+Memória: abstração para leitura e escrita simuladas
+Controladores: contabilizam ciclos, instruções e tempo de execução
+Métodos principais
+Executar: executa lógica da instrução e atualiza o estado
+ParseInstrucao: extrai instrução e operandos do texto
+ParseWordsToArray: carrega e prepara a memória do programa
+Detalhes
+Suporte a instruções R, I e J (add, sub, lw, sw, beq, j, etc)
+Atualização correta do PC, incluindo saltos e desvios
+Contabilização dos ciclos por instrução e cálculo do tempo total
+Tratamento de exceções para instruções inválidas
 
-Exemplo:
-addi $t0, $zero, 0       # inicializa $t0 com 0
-Loop:
-add  $t0, $t0, $t2       # soma 2 ao acumulador
-bne  $t3, $t4, Loop      # repete até contar 10
+---
 
-Execute o simulador:
+### 🧑‍💻 Como usar
+Passos rápidos
+Clone o repositório
+Abra o projeto em Visual Studio ou editor preferido
+Prepare seu código assembly seguindo o padrão
+Execute o simulador e avance passo a passo
+Observe registradores, memória, PC e tempo
 
-Use a interface para avançar a execução passo a passo
-Observe os valores dos registradores, PC e memória atualizados a cada ciclo
-Verifique mensagens de erro caso alguma instrução seja inválida ou label não encontrada
-Compreensão dos controles:
-O simulador respeita o tempo de clock definido, simulando ciclos por instrução
-Você pode avançar manualmente ou aguardar a execução automática com delays
-Labels e saltos são interpretados corretamente para controlar o fluxo do programa
+---
+### ⚠️ Dicas importantes e cuidados
 
-Detalhes do código e arquitetura
-Controle de clock:
-O método ExecutarClock() controla o ciclo da execução, decrementando os ciclos restantes por instrução e aguardando delay entre eles.
+Use instruções MIPS válidas e operandos corretos
+Declare todos os labels usados
+Evite acessar endereços de memória não inicializados
+Comentários devem iniciar com # e estar fora da instrução
 
-Parsing de instruções:
-As linhas do programa são parseadas para extrair instrução e operandos, ignorando comentários e labels.
+---
 
-Execução de instruções:
-O método Executar() recebe instrução, operandos, registradores e memória, atualizando o estado conforme a lógica da instrução.
+### 🤝 Contribuições
 
-Gerenciamento de memória:
-Memória e registradores são representados por estruturas que simulam os endereços e valores reais.
-
-Labels e saltos:
-Labels são armazenados em um dicionário e usados para controlar o fluxo de execução com instruções j e b.
-
-O que evitar
-Instruções inválidas:
-Certifique-se de usar instruções MIPS válidas e operandos corretos para evitar erros de parsing.
-Labels não declaradas:
-Não use labels que não foram definidas, isso causará erro de execução.
-Acesso fora dos limites da memória:
-Evite acessar posições de memória que não foram inicializadas, pode causar erros ou comportamento inesperado.
-Comentários e linhas vazias:
-Comentários devem começar com # e não podem estar dentro da instrução (deve estar após o código). Linhas vazias são ignoradas.
-Contribuindo
-Contribuições são muito bem-vindas!
-Fork o projeto
-Crie uma branch para sua feature (git checkout -b minha-feature)
-Faça commit das suas alterações (git commit -m 'Minha feature')
-Faça push para o branch (git push origin minha-feature)
-Abra um Pull Request no repositório original
-
-
+Contribuições são bem-vindas!
+Faça fork do projeto
+Crie uma branch para sua feature: git checkout -b minha-feature
+Faça commit das alterações: git commit -m 'Minha feature'
+Envie para o repositório: git push origin minha-feature
+Abra um Pull Request
