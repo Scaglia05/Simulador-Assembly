@@ -1,86 +1,118 @@
 ### 🚀 Simulador MIPS
 
-Um simulador completo da arquitetura MIPS que permite interpretar, executar e analisar código assembly MIPS de forma detalhada, passo a passo, simulando o comportamento real da CPU, incluindo registradores, memória, saltos e cálculo de tempo baseado nos ciclos do clock.
+Simulador completo da arquitetura MIPS que permite interpretar, executar e analisar código assembly MIPS detalhadamente. Executa passo a passo, simulando o comportamento real da CPU, incluindo registradores, memória, controle de saltos e cálculo do tempo baseado nos ciclos de clock.
 
 ---
 ### 📄 Formato do arquivo de código MIPS
 
-O simulador recebe como entrada um arquivo texto com o código assembly MIPS.
-Padrões e convenções:
-Cada instrução deve estar em uma linha separada.
-Comentários iniciam com # e são ignorados (tudo após # na linha).
-Instruções e operandos separados por espaços ou tabs.
-Operandos múltiplos separados por vírgulas , ou pontos ...
-Endereços com offset usam o formato offset(base), ex: lw $t0, 4($sp).
-Labels (rótulos) são linhas próprias, terminadas com :, usados para saltos.
+O simulador aceita um arquivo texto contendo o código assembly MIPS seguindo as regras abaixo:
 
-``main:
-    add $t0, $t1, $t2   # Soma $t1 e $t2 e guarda em $t0
-    lw  $t3, 4($sp)     # Carrega da memória em $sp+4 para $t3
-    beq $t0, $t3, end   # Se iguais, pula para end
+- Cada instrução deve estar em uma linha separada.
+- Comentários iniciam com `#` e todo o conteúdo após `#` na linha é ignorado.
+- Instruções e operandos são separados por espaços ou tabs.
+- Operandos múltiplos são separados por vírgulas `,` ou pontos `...`.
+- Endereços com offset devem usar o formato `offset(base)`, por exemplo: `lw $t0, 4($sp)`.
+- Labels (rótulos) devem estar em linhas próprias, terminando com `:`, e são usados para saltos.
+
+Exemplo de arquivo:
+
+```asm
+main:
+    add $t0, $t1, $t2    # Soma $t1 e $t2 e guarda em $t0
+    lw  $t3, 4($sp)      # Carrega da memória em $sp+4 para $t3
+    beq $t0, $t3, end    # Se iguais, pula para end
     sub $t0, $t0, $t1
 end:
-    sw  $t0, 0($sp)``
-    
+    sw  $t0, 0($sp)
+````
+
 ---
 
 ### ⚙️ Funcionalidades
 
-▶️ Execução passo a passo do código assembly MIPS
-🔀 Suporte a labels e saltos condicionais/incondicionais (j, beq, bne, etc)
-⏳ Simulação de ciclos de clock para cálculo de tempo realista
-🧮 Visualização dinâmica dos registradores e memória
-📝 Parsing robusto de instruções, operandos, comentários e labels
-🔄 Avanço manual ou automático da execução
-💾 Conversão de instruções para binário e hexadecimal para validação
-📊 Monitoramento do estado da CPU e memória após cada instrução
+▶️ **Execução passo a passo**  
+Permite avançar a execução do código assembly MIPS linha a linha, facilitando o aprendizado e depuração.
+
+🔀 **Suporte a labels e saltos**  
+Trata corretamente instruções de desvio condicionais e incondicionais (`j`, `beq`, `bne`, etc.), controlando o fluxo do programa.
+
+⏳ **Simulação realista de ciclos de clock**  
+Cada instrução consome ciclos baseados na configuração, simulando o tempo real gasto no processador.
+
+🧮 **Visualização dinâmica**  
+Exibe em tempo real o conteúdo atualizado dos registradores e da memória durante a execução.
+
+📝 **Parsing robusto**  
+Interpreta corretamente instruções, operandos, comentários (`#`) e labels, garantindo o funcionamento adequado do simulador.
+
+🔄 **Controle manual de execução**  
+Usuário avança manualmente cada passo e aguarda a execução automática com delays configuráveis (Consumo de clock/Intrução).
+
+💾 **Conversão de instruções**  
+Converte as instruções para suas representações em binário e hexadecimal, facilitando análise e validação.
+
+📊 **Monitoramento detalhado**  
+Exibe o estado completo da CPU e memória após cada instrução, incluindo contadores de ciclos e tempo acumulado.
 
 ---
 
-###🛠️ Requisitos
+### 🛠️ Requisitos
 
-.NET 6.0 ou superior
-Visual Studio 2022 ou editor C# compatível
-Arquivo teste com instruções
+Para executar o simulador MIPS, certifique-se de ter o seguinte ambiente configurado:
+
+- **.NET 6.0** (ou superior) instalado no seu sistema.
+- **Visual Studio 2022** (ou outro editor compatível com C#) para compilar e rodar o projeto.
+- **Arquivo texto** contendo as instruções MIPS que serão simuladas, seguindo o formato padrão especificado.
+
 ---
-### 🚀 Como utilizar
+### 🚀 Como Utilizar o Simulador MIPS
 
-Pré-requisitos
-Ambiente .NET configurado (Visual Studio, .NET CLI)
-Código MIPS em arquivo .asm seguindo o padrão
-Passo a passo
-Preparar o código MIPS
-Escreva seu código assembly em um arquivo texto com o formato explicado.
-Carregar código no simulador
-Use o método ParseWordsToArray para ler o arquivo e preparar a memória.
-Executar instruções
-Itere pela memória de instruções, executando linha a linha com o método Executar.
-Monitorar estado
-Após cada passo, visualize registradores, memória, instrução em binário/hex e tempo acumulado.
+#### Pré-requisitos
+- Ambiente .NET instalado e configurado (Visual Studio, .NET CLI ou similar).
+- Arquivo texto contendo o código MIPS, formatado conforme o padrão esperado.
 
-Exemplo básico (C#):
+#### Passo a Passo para Uso
 
-``Memoria memoria = new Memoria();
-MemoriaInstrucao memoriaInstrucao = new MemoriaInstrucao();
-var registradores = InicializarRegistradores();
-var labels = CarregarLabels(codigoAssembly);
-double tempoClock = 1.0 / 1_000_000; // 1 MHz = 1 microssegundo por ciclo
-var instrucoesECiclos = ParseWordsToArray("programa.asm", TipoI, TipoJ, TipoR, tempoClock, memoriaInstrucao);
-int pc = 0;
-bool executar = true;
-while (executar) {
-    var (instrucao, operandos) = ParseInstrucao(ObterLinhaDaMemoria(memoriaInstrucao, pc));
-    Executar(instrucao, operandos, registradores, memoria, labels, pc, ciclosInstrucoes, tempoClock, memoriaInstrucao, simuladorObj, false);
-    pc = registradores["PC"];
-    if (pc >= fimDoPrograma) executar = false;
-}``
+1. **Preparar o Código MIPS**  
+   Crie um arquivo texto com seu código assembly MIPS. Respeite o formato padrão:  
+   - Cada instrução em uma linha separada.  
+   - Comentários iniciados com `#`.  
+   - Labels terminam com `:` em linhas próprias.  
+   - Opcionalmente, a primeira linha pode conter a configuração `Config_CPU` para definir clock e ciclos, caso não utilize inserção manual.
+
+2. **Carregar o Código no Simulador**  
+   Abra ou carregue o arquivo texto com o código. Se houver a linha `Config_CPU` no arquivo, o simulador lerá automaticamente as configurações. Caso contrário, insira os parâmetros manualmente via interface.
+
+3. **Executar as Instruções**  
+   Inicie a simulação e execute as instruções linha a linha, manualmente ou automaticamente.
+
+4. **Monitorar o Estado do Simulador**  
+   Após cada instrução, observe:  
+   - Valores dos registradores.  
+   - Conteúdo da memória.  
+   - Instrução em binário e hexadecimal.  
+   - Tempo acumulado baseado nos ciclos e clock configurados.
+
+Este fluxo permite entender o funcionamento interno da CPU MIPS e depurar seu código assembly com facilidade.
+
 
 ---
 
 ### 📂 Inserção manual x leitura de arquivo
 
-Inserção manual: Pode-se passar o código diretamente como string, linha a linha, respeitando o formato.
-Leitura do arquivo: Processa o arquivo linha a linha, ignorando comentários e vazios, separando instruções e operandos para execução.
+O simulador oferece duas formas para configurar a simulação:
+
+Inserção Manual:
+Quando ativada, libera campos para o usuário inserir parâmetros personalizados (clock, ciclos) diretamente na interface, dispensando a necessidade de configurações no arquivo.
+
+Leitura de Arquivo:
+Quando desativada, o simulador exige que a primeira linha do arquivo contenha uma configuração no formato Config_CPU, com parâmetros como frequência do clock e ciclos para tipos de instruções. 
+Formato: 
+
+``Config_CPU = [10ghz,i=1,j=1,r=1]``
+
+Essa linha deve especificar a frequência do clock (com unidade kHz, MHz ou GHz) e o número de ciclos para cada tipo de instrução (i, j e r). Após validar essa configuração, o simulador processa o arquivo linha a linha, ignorando comentários e linhas vazias, separando instruções e identificando labels para saltos.
+O simulador valida esses parâmetros antes da execução e prepara os registradores, memória e instruções para a simulação. Caso falte a configuração ou haja erro no formato, a execução é interrompida com mensagem de erro.
 
 ---
 
