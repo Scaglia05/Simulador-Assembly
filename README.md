@@ -115,25 +115,30 @@ O simulador valida esses parâmetros antes da execução e prepara os registrado
 
 --- 
 
-### 🏗️ Como foi implementado?
+## 🏗️ Como foi implementado?
 
-**Arquitetura Geral**
-- **Parser:** interpreta o código MIPS, extraindo instruções e operandos
-- **Simulador:** executa as instruções, atualizando o estado da CPU e da memória
-- **Tabela de Instruções:** contém os ciclos e características de cada instrução
-- **Memória:** abstração para leitura e escrita simuladas
-- **Controladores:** contabilizam ciclos, instruções e tempo de execução
+### Arquitetura Geral
+- **Parser:** responsável por interpretar o código MIPS, identificando instruções e seus operandos.  
+- **Simulador:** centraliza a execução das instruções, gerenciando o estado dos registradores, da memória de dados e instruções, além de controlar o fluxo do programa (PC).  
+- **Tabela de Instruções:** mantém o mapeamento das instruções com seus tipos (R, I, J) e os ciclos de clock associados a cada tipo, facilitando a decodificação e execução.  
+- **Memória (Dados e Instruções):** abstrações que simulam a memória do sistema, permitindo leitura e escrita de bytes, meia palavra e palavra completa, além de manipulação ordenada dos dados armazenados.  
+- **Totalizador:** controlador global que contabiliza o total de instruções executadas, ciclos consumidos e tempo total estimado da simulação.  
 
-**Métodos principais**
-- `Executar`: lógica para executar instruções e atualizar estados
-- `ParseInstrucao`: extrai instrução e operandos do texto
-- `ParseWordsToArray`: carrega e prepara a memória do programa
+### Métodos principais
+- `ConverterInstrucaoParaBinario`: converte uma instrução MIPS textual e seus operandos para sua representação binária, suportando os formatos R, I e J.  
+- `MontarTipoR/I/J`: auxiliares para montar a instrução binária conforme o tipo da instrução.  
+- `ObterOpcode` e `ObterFunct`: fornecem o código opcode e função (funct) necessários para montar a instrução.  
+- `ObterTempoCicloEmSegundos` e `ObterTempoTotalEstimado`: calculam o tempo consumido pela simulação com base na frequência do clock e no total de ciclos.  
+- `Memoria.LerPalavra/EscreverPalavra`, `MemoriaInstrucao.LerPalavra/EscreverPalavra`: leitura e escrita simulada de dados e instruções na memória.  
+- `TabelaInstrucoes.AtualizarCiclos`: atualiza os ciclos por tipo de instrução, permitindo ajuste dinâmico da simulação.  
 
-**Detalhes**
-- Suporte às instruções dos formatos R, I e J (ex: add, sub, lw, sw, beq, j)
-- Atualização correta do PC, incluindo saltos e desvios
-- Contabilização de ciclos por instrução e cálculo do tempo total
-- Tratamento de exceções para instruções inválidas
+### Detalhes
+- Suporte completo aos formatos de instrução R, I e J, incluindo as principais operações (add, sub, lw, sw, beq, j, entre outras).  
+- Controle rigoroso do PC, com suporte a desvios e saltos, respeitando os efeitos de cada instrução.  
+- Implementação detalhada da memória, com manipulação byte a byte e agrupamento por palavras, permitindo visualização do estado da memória em formato hexadecimal.  
+- Contabilização precisa dos ciclos de clock por instrução, com cálculo estimado do tempo total de execução baseado na frequência do clock configurada.  
+- Uso de coleções e dicionários para manter registradores, labels, e o conteúdo da memória, garantindo eficiência e clareza no acesso aos dados.  
+- Tratamento de instruções inválidas ou não reconhecidas retornando valores padrão para evitar falhas durante a simulação.  
 
 ---
 ### 🧑‍💻 Como usar
