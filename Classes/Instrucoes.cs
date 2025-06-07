@@ -112,7 +112,7 @@ namespace Simulador_Assembly_Final.Classes {
         }
 
 
-        public async void Executar(string instrucao, List<string> Operands, Dictionary<string, int> registradores, Memoria memoria, Dictionary<string, int> labels, int pc, Dictionary<string, int> ciclosInstrucoes, double tempoClockUnicoSegundos, MemoriaInstrucao memoriaInstrucao, Simulador simuladorObj) {
+        public async void Executar(string instrucao, List<string> Operands, Dictionary<string, int> registradores, Memoria memoria, Dictionary<string, int> labels, int pc, Dictionary<string, int> ciclosInstrucoes, double tempoClockUnicoSegundos, MemoriaInstrucao memoriaInstrucao, Simulador simuladorObj, bool mostrarParametrosAvancados) {
             // Totalização de instrução
             Totalizador.TotalInstrucoes++;
             Simulador simulador = new Simulador();
@@ -141,7 +141,7 @@ namespace Simulador_Assembly_Final.Classes {
                 string instrucaoHexadecimal = simulador.ConverterInstrucaoParaHexadecimal(instrucao, Operands);
 
                 // Mostra o estado dos registradores e da memória para cada iteração
-                MostrarEstadoRegistradoresEMemoria(registradores, memoria, instrucaoHexadecimal, memoriaInstrucao);
+                MostrarEstadoRegistradoresEMemoria(registradores, memoria, instrucaoHexadecimal, memoriaInstrucao, mostrarParametrosAvancados);
                 //Console.WriteLine($"Instrução Binária: {instrucaoBinario}");
                 //Console.WriteLine($"Instrução Hexadecimal: {instrucaoHexadecimal}");
 
@@ -295,7 +295,7 @@ namespace Simulador_Assembly_Final.Classes {
 
 
         // Método para mostrar o estado dos registradores e da memória
-        public void MostrarEstadoRegistradoresEMemoria(Dictionary<string, int> registradores, Memoria memoria, string instrucaoHexadecimal, MemoriaInstrucao memoriaInstrucao) {
+        public void MostrarEstadoRegistradoresEMemoria(Dictionary<string, int> registradores, Memoria memoria, string instrucaoHexadecimal, MemoriaInstrucao memoriaInstrucao, bool mostrarParametrosAvancados) {
             //Console.WriteLine($"PC: {instrucaoHexadecimal}");
 
             //Console.WriteLine("Estado dos Registradores:");
@@ -305,7 +305,7 @@ namespace Simulador_Assembly_Final.Classes {
 
             //Console.WriteLine("Estado da Memória:");
             memoria.MostrarEstadoMemoriaDados();  // Mostra os primeiros 16 endereços de memória, você pode ajustar conforme necessário
-            memoriaInstrucao.ObterEstadoMemoriaDados();
+            memoriaInstrucao.ObterEstadoMemoriaDados(mostrarParametrosAvancados);
 
         }
 

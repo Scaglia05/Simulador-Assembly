@@ -48,7 +48,43 @@ namespace Simulador_Assembly_Final.Classes {
             memoria[endereco] = (byte)valor;
         }
 
-        public List<string> ObterEstadoMemoriaDados() {
+        public List<string> ObterEstadoMemoriaDados(bool mostrarParametrosAvancados) {
+
+            if (!mostrarParametrosAvancados) {
+                // Verifica se os 4 primeiros bytes existem na memória e são zero
+                bool primeirosQuatroZeros = true;
+                for (int i = 0; i < 4; i++) {
+                    if (!memoria.TryGetValue(i, out byte b) || b != 0) {
+                        primeirosQuatroZeros = false;
+                        break;
+                    }
+                }
+
+                // Se os 4 primeiros bytes são zero, remove-os e reordena a memória
+                if (primeirosQuatroZeros) {
+                    // Remove os primeiros 4 bytes
+                    for (int i = 0; i < 4; i++) {
+                        memoria.Remove(i);
+                    }
+
+                    // Cria um novo dicionário com chaves renumeradas a partir de zero
+                    var memoriaOrdenada = new Dictionary<int, byte>();
+
+                    // Ordena os pares restantes por chave e reatribui as chaves começando em zero
+                    int novoEndereco = 0;
+                    foreach (var par in memoria.OrderBy(kvp => kvp.Key)) {
+                        memoriaOrdenada[novoEndereco++] = par.Value;
+                    }
+
+                    // Limpa o dicionário original e adiciona os pares renumerados
+                    memoria.Clear();
+                    foreach (var par in memoriaOrdenada) {
+                        memoria[par.Key] = par.Value;
+                    }
+                }
+            }
+
+
             var resultado = new List<string>();
 
             if (memoria == null || !memoria.Any())
@@ -68,6 +104,7 @@ namespace Simulador_Assembly_Final.Classes {
 
             return resultado;
         }
+
         public string ObterInstrucaoHexadecimal(string instrucao, int endereco) {
             Instrucoes instAssembly = new();
             if (string.IsNullOrEmpty(instrucao)) {

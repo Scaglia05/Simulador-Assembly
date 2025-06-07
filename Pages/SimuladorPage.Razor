@@ -2,43 +2,51 @@
 @page "/"
 @inject IJSRuntime JS
 @using Simulador_Assembly_Final.Classes
+@using System.Globalization
 
 <h3 class="titulo">Simulador de Assembly</h3>
 
-<div class="form-container">
+<div class="form-container" style="@((mostrarParametrosAvancados ? "max-width: 600px;" : "max-width: 400px;"))">
     <div class="form-group">
         <label for="filePath">Caminho do Arquivo</label>
         <input id="filePath" @bind="simuladorObj.FilePath" placeholder="Ex: C:\código\teste.asm" />
     </div>
 
     <div class="form-group">
-        <label for="clockMHz">Clock (MHz)</label>
-        <input id="clockMHz" type="number" @bind="simuladorObj.ClockMHz" />
+        <label class="switch-label">
+            <span>Exibir parâmetros avançados</span>
+            <label class="switch">
+                <input type="checkbox" @bind="mostrarParametrosAvancados" />
+                <span class="slider round"></span>
+            </label>
+        </label>
     </div>
 
-    <div class="form-group">
-        <label for="ciclosR">Ciclos para instruções tipo R</label>
-        <input id="ciclosR" type="number" @bind="simuladorObj.CyclesR" />
-    </div>
 
-    <div class="form-group">
-        <label for="ciclosI">Ciclos para instruções tipo I</label>
-        <input id="ciclosI" type="number" @bind="simuladorObj.CyclesI" />
-    </div>
-
-    <div class="form-group">
-        <label for="ciclosJ">Ciclos para instruções tipo J</label>
-        <input id="ciclosJ" type="number" @bind="simuladorObj.CyclesJ" />
-    </div>
-
-    <button class="btn-primary" @onclick="ExecutarSimulacaoAsync">Executar Simulação</button>
-
-    @if (!string.IsNullOrWhiteSpace(resultadoSimulacao))
+    @if (mostrarParametrosAvancados)
     {
-        <div class="resultado">
-            <pre>@resultadoSimulacao</pre>
+        <div class="form-group">
+            <label for="clockMHz">Clock (MHz)</label>
+            <input id="clockMHz" type="number" @bind="simuladorObj.ClockMHz" />
+        </div>
+
+        <div class="form-group">
+            <label for="ciclosR">Ciclos para instruções tipo R</label>
+            <input id="ciclosR" type="number" @bind="simuladorObj.CyclesR" />
+        </div>
+
+        <div class="form-group">
+            <label for="ciclosI">Ciclos para instruções tipo I</label>
+            <input id="ciclosI" type="number" @bind="simuladorObj.CyclesI" />
+        </div>
+
+        <div class="form-group">
+            <label for="ciclosJ">Ciclos para instruções tipo J</label>
+            <input id="ciclosJ" type="number" @bind="simuladorObj.CyclesJ" />
         </div>
     }
+
+    <button class="btn-primary" @onclick="ExecutarSimulacaoAsync">Executar Simulação</button>
 </div>
 
 @if (mostrarModal)
@@ -70,7 +78,7 @@
             <div class="painel-execucao">
                 <div class="bloco bloco-longo">
                     <strong>Memória de Programa</strong>
-                    @foreach (var linha in memoriaInstrucao.ObterEstadoMemoriaDados())
+                    @foreach (var linha in memoriaInstrucao.ObterEstadoMemoriaDados(mostrarParametrosAvancados))
                     {
                         <div class="linha-execucao">@linha</div>
                     }
@@ -123,6 +131,7 @@
 
 
 @code {
+    private bool mostrarParametrosAvancados = false;
     private Simulador simuladorObj { get; set; } = new();
     private MemoriaInstrucao memoriaInstrucao { get; set; } = new();
     private Memoria memoria { get; set; } = new();
@@ -154,6 +163,89 @@
             return;
         }
 
+        var linhas = File.ReadAllLines(simuladorObj.FilePath).ToList();
+
+        if (!mostrarParametrosAvancados)
+        {
+            if (linhas.Count > 0 && linhas[0].StartsWith("Config_CPU"))
+            {
+                try
+                {
+                    var conteudo = linhas[0].Split('[', ']')[1];
+                    var parametros = conteudo.Split(',').Select(p => p.Trim()).ToList();
+
+                    // Clock com múltiplas unidades (kHz, MHz, GHz)
+                    var clock = parametros[0].ToLowerInvariant();
+
+                    double valorClock;
+
+                    if (clock.EndsWith("ghz"))
+                    {
+                        valorClock = double.Parse(clock.Replace("ghz", ""), CultureInfo.InvariantCulture);
+                        simuladorObj.ClockMHz = valorClock * 1000; // GHz para MHz
+                    }
+                    else if (clock.EndsWith("mhz"))
+                    {
+                        valorClock = double.Parse(clock.Replace("mhz", ""), CultureInfo.InvariantCulture);
+                        simuladorObj.ClockMHz = valorClock; // já está em MHz
+                    }
+                    else if (clock.EndsWith("khz"))
+                    {
+                        valorClock = double.Parse(clock.Replace("khz", ""), CultureInfo.InvariantCulture);
+                        simuladorObj.ClockMHz = valorClock / 1000; // kHz para MHz
+                    }
+                    else
+                    {
+                        resultadoSimulacao = "Unidade do clock inválida. Use 'kHz', 'MHz' ou 'GHz'.";
+                        return;
+                    }
+
+                    // Ciclos
+                    foreach (var item in parametros.Skip(1))
+                    {
+                        var partes = item.Split('=');
+                        if (partes.Length == 2)
+                        {
+                            var tipo = partes[0].ToLowerInvariant();
+                            if (!int.TryParse(partes[1], out int valor))
+                            {
+                                resultadoSimulacao = "Valor dos ciclos inválido.";
+                                return;
+                            }
+
+                            switch (tipo)
+                            {
+                                case "r": simuladorObj.CyclesR = valor; break;
+                                case "i": simuladorObj.CyclesI = valor; break;
+                                case "j": simuladorObj.CyclesJ = valor; break;
+                                default:
+                                    resultadoSimulacao = $"Tipo de ciclo desconhecido: {tipo}";
+                                    return;
+                            }
+                        }
+                        else
+                        {
+                            resultadoSimulacao = "Formato inválido para parâmetros de ciclos.";
+                            return;
+                        }
+                    }
+
+                    linhas.RemoveAt(0); // remove linha de configuração
+                }
+                catch
+                {
+                    resultadoSimulacao = "Erro ao processar linha 'Config_CPU'. Verifique o formato.";
+                    return;
+                }
+            }
+            else
+            {
+                resultadoSimulacao = "Linha 'Config_CPU' ausente no início do arquivo.";
+                return;
+            }
+        }
+
+        // Aqui roda tanto para avançado (true) quanto para normal (false)
         if (simuladorObj.ClockMHz <= 0 || simuladorObj.CyclesR <= 0 || simuladorObj.CyclesI <= 0 || simuladorObj.CyclesJ <= 0)
         {
             resultadoSimulacao = "Verifique os valores de clock e ciclos. Todos devem ser maiores que zero.";
@@ -162,25 +254,17 @@
 
         simuladorObj.TempoClockUnicoSegundos = await simuladorObj.ObterTempoMs(simuladorObj.ClockMHz);
 
-        resultadoSimulacao = $"--- Parâmetros Iniciais ---\n" +
-        $"Arquivo: {simuladorObj.FilePath}\n" +
-        $"Clock: {simuladorObj.ClockMHz} MHz\n" +
-        $"Tempo de um ciclo de clock: {simuladorObj.TempoClockUnicoSegundos} segundos\n" +
-        $"Ciclos tipo R: {simuladorObj.CyclesR} | Ciclos tipo I: {simuladorObj.CyclesI} | Ciclos tipo J: {simuladorObj.CyclesJ}\n\n";
-
         Registradores = TabelaInstrucoes.Registradores.CriarRegistradores();
-        LinhasPrograma = File.ReadAllLines(simuladorObj.FilePath).ToList();
+        LinhasPrograma = linhas;
 
-        // Salvar em variáveis de estado para uso no ExecutarClock()
-        MemoriaPrograma = LinhasPrograma.Where(l => !string.IsNullOrWhiteSpace(l) && !l.Trim().StartsWith("#")).ToList();
+        MemoriaPrograma = linhas
+            .Where(l => !string.IsNullOrWhiteSpace(l) && !l.Trim().StartsWith("#"))
+            .ToList();
 
-        // Mapear labels
         Labels.Clear();
         for (int i = 0; i < LinhasPrograma.Count; i++)
         {
-
             var linha = LinhasPrograma[i].Trim();
-
             if (linha.EndsWith(":"))
             {
                 string nomeLabel = linha.Substring(0, linha.Length - 1).Trim();
@@ -193,6 +277,7 @@
         mostrarModal = true;
         StateHasChanged();
     }
+
 
     private void FecharModal()
     {
@@ -276,8 +361,15 @@
                 ciclosRestantesInstrucao = 0; // Se não encontrou, considera como 1 ciclo
             }
 
+            if (!mostrarParametrosAvancados && ciclosInstrucoes.Count > 0)
+            {
+                var primeiraChave = ciclosInstrucoes.Keys.First();
+                ciclosInstrucoes.Remove(primeiraChave);
+            }
+
+
             // Executar a instrução
-            instrucoes.Executar(instrucao, operandos, simuladorObj.Registradores, memoria, Labels, linhaAtual, ciclosInstrucoes, simuladorObj.TempoClockUnicoSegundos, memoriaInstrucao, simuladorObj);
+            instrucoes.Executar(instrucao, operandos, simuladorObj.Registradores, memoria, Labels, linhaAtual, ciclosInstrucoes, simuladorObj.TempoClockUnicoSegundos, memoriaInstrucao, simuladorObj, mostrarParametrosAvancados);
             TotalInstrucoes = ciclosInstrucoes.Count();
             LinhaAtualCompletaAssembly = linha;
             LinhaAtualReferencia = (linhaAtual * 4);
@@ -309,43 +401,55 @@
 }
 
 <style>
+
     /* Container do formulário */
     .form-container {
         max-width: 600px;
         margin: 2rem auto;
-        padding: 1.5rem;
-        background: #f9f9f9;
-        border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        padding: 2rem;
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        transition: all 0.3s ease-in-out;
     }
 
+    /* Agrupamento de campos */
     .form-group {
-        margin-bottom: 1.2rem;
+        margin-bottom: 1.5rem;
     }
 
         .form-group label {
             display: block;
-            margin-bottom: 0.3rem;
+            margin-bottom: 0.5rem;
             font-weight: 600;
-            color: #333;
+            color: #222;
         }
 
         .form-group input {
             width: 100%;
-            padding: 0.5rem 0.7rem;
-            border: 1px solid #ccc;
-            border-radius: 5px;
+            padding: 0.65rem 1rem;
+            border: 1px solid #d0d0d0;
+            border-radius: 8px;
             font-size: 1rem;
             box-sizing: border-box;
+            transition: border-color 0.3s;
         }
 
+            .form-group input:focus {
+                outline: none;
+                border-color: #007bff;
+                box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
+            }
+
+    /* Botões */
     button {
         cursor: pointer;
         font-weight: 600;
         border: none;
-        border-radius: 6px;
-        padding: 0.6rem 1.3rem;
+        border-radius: 8px;
+        padding: 0.7rem 1.4rem;
+        font-size: 1rem;
         transition: background-color 0.3s ease;
     }
 
@@ -368,18 +472,19 @@
             background-color: #5a6268;
         }
 
+    /* Resultados */
     .resultado {
         margin-top: 1.5rem;
-        background-color: #eef2f7;
-        padding: 1rem;
-        border-radius: 6px;
-        white-space: pre-wrap;
+        background-color: #f4f6fa;
+        padding: 1.2rem;
+        border-radius: 8px;
         font-family: Consolas, monospace;
         max-height: 300px;
         overflow-y: auto;
+        box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.05);
     }
 
-    /* Painel de execução geral */
+    /* Painel de execução */
     .painel-execucao {
         display: flex;
         flex-wrap: wrap;
@@ -388,36 +493,35 @@
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
 
-    /* Blocos lado a lado */
+    /* Blocos */
+    .bloco,
+    .bloco-longo {
+        background: #f8fafc;
+        border-radius: 10px;
+        padding: 1.2rem;
+        box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.03);
+        overflow-y: auto;
+    }
+
     .bloco {
         flex: 1 1 45%;
-        background: #f7f9fc;
-        border-radius: 8px;
-        padding: 1rem;
-        box-shadow: inset 0 0 5px rgba(0,0,0,0.05);
-        max-height: calc(30vh); /* ajusta para caber na tela */
-        overflow-y: auto;
+        max-height: 30vh;
     }
 
-    /* Bloco que ocupa linha inteira */
     .bloco-longo {
         flex: 1 1 100%;
-        background: #f7f9fc;
-        border-radius: 8px;
-        padding: 1rem;
-        box-shadow: inset 0 0 5px rgba(0,0,0,0.05);
-        max-height: calc(30vh);
-        overflow-y: auto;
+        max-height: 30vh;
     }
 
-    /* Linha atual destacada */
+    /* Linha em execução */
     .linha-execucao {
-        padding: 3px 5px;
-        border-radius: 4px;
-        margin-bottom: 2px;
+        padding: 0.4rem 0.6rem;
+        border-radius: 6px;
+        margin-bottom: 4px;
         font-family: Consolas, monospace;
         font-size: 0.9rem;
         color: #444;
+        background: #f0f2f5;
     }
 
     .linha-atual {
@@ -427,14 +531,73 @@
         color: #0f5132;
     }
 
-    /* Modal adaptável à altura da tela */
+    /* Modal */
     .modal-container {
         max-height: 95vh;
         overflow-y: auto;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
     }
 
+    /* Botões do modal */
     .modal-buttons {
         text-align: right;
+        margin-top: 1rem;
     }
+
+    /* Switch */
+    .switch-label {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-weight: 600;
+        margin-bottom: 1.2rem;
+    }
+
+    .switch {
+        position: relative;
+        display: inline-block;
+        width: 50px;
+        height: 26px;
+    }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: 0.4s;
+        border-radius: 26px;
+    }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.4s;
+            border-radius: 50%;
+        }
+
+    input:checked + .slider {
+        background-color: #007bff;
+    }
+
+        input:checked + .slider:before {
+            transform: translateX(24px);
+        }
+
 </style>
 
