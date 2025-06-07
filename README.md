@@ -95,7 +95,6 @@ Para executar o simulador MIPS, certifique-se de ter o seguinte ambiente configu
 
 Este fluxo permite entender o funcionamento interno da CPU MIPS e depurar seu código assembly com facilidade.
 
-
 ---
 
 ### 📂 Inserção manual x leitura de arquivo
@@ -114,61 +113,54 @@ Formato:
 Essa linha deve especificar a frequência do clock (com unidade kHz, MHz ou GHz) e o número de ciclos para cada tipo de instrução (i, j e r). Após validar essa configuração, o simulador processa o arquivo linha a linha, ignorando comentários e linhas vazias, separando instruções e identificando labels para saltos.
 O simulador valida esses parâmetros antes da execução e prepara os registradores, memória e instruções para a simulação. Caso falte a configuração ou haja erro no formato, a execução é interrompida com mensagem de erro.
 
----
-
-###🧩 Como o parser interpreta as instruções 
-
-Remove comentários (#)
-Divide linha em instrução e operandos
-Separa operandos por vírgula ou ponto
-Trata operandos com offset e base (offset(base))
-Labels são identificados e armazenados para controle de saltos
-
----
+--- 
 
 ### 🏗️ Como foi implementado?
 
-Arquitetura Geral
-Parser: interpreta o código MIPS em instruções e operandos
-Simulador: executa as instruções e atualiza o estado da CPU e memória
-Tabela de Instruções: contém ciclos e características de cada instrução
-Memória: abstração para leitura e escrita simuladas
-Controladores: contabilizam ciclos, instruções e tempo de execução
-Métodos principais
-Executar: executa lógica da instrução e atualiza o estado
-ParseInstrucao: extrai instrução e operandos do texto
-ParseWordsToArray: carrega e prepara a memória do programa
-Detalhes
-Suporte a instruções R, I e J (add, sub, lw, sw, beq, j, etc)
-Atualização correta do PC, incluindo saltos e desvios
-Contabilização dos ciclos por instrução e cálculo do tempo total
-Tratamento de exceções para instruções inválidas
+**Arquitetura Geral**
+- **Parser:** interpreta o código MIPS, extraindo instruções e operandos
+- **Simulador:** executa as instruções, atualizando o estado da CPU e da memória
+- **Tabela de Instruções:** contém os ciclos e características de cada instrução
+- **Memória:** abstração para leitura e escrita simuladas
+- **Controladores:** contabilizam ciclos, instruções e tempo de execução
+
+**Métodos principais**
+- `Executar`: lógica para executar instruções e atualizar estados
+- `ParseInstrucao`: extrai instrução e operandos do texto
+- `ParseWordsToArray`: carrega e prepara a memória do programa
+
+**Detalhes**
+- Suporte às instruções dos formatos R, I e J (ex: add, sub, lw, sw, beq, j)
+- Atualização correta do PC, incluindo saltos e desvios
+- Contabilização de ciclos por instrução e cálculo do tempo total
+- Tratamento de exceções para instruções inválidas
 
 ---
-
 ### 🧑‍💻 Como usar
-Passos rápidos
-Clone o repositório
-Abra o projeto em Visual Studio ou editor preferido
-Prepare seu código assembly seguindo o padrão
-Execute o simulador e avance passo a passo
-Observe registradores, memória, PC e tempo
+
+Passos rápidos:  
+1. Clone o repositório  
+2. Abra o projeto no Visual Studio ou editor de sua preferência  
+3. Prepare seu código assembly seguindo o padrão definido  
+4. Execute o simulador e avance passo a passo  
+5. Observe o estado dos registradores, memória, PC e tempo de execução  
 
 ---
+
 ### ⚠️ Dicas importantes e cuidados
 
-Use instruções MIPS válidas e operandos corretos
-Declare todos os labels usados
-Evite acessar endereços de memória não inicializados
-Comentários devem iniciar com # e estar fora da instrução
+- Utilize instruções MIPS válidas e operandos corretos  
+- Declare todos os labels que forem utilizados  
+- Evite acessar endereços de memória não inicializados  
+- Comentários devem começar com `#` e estar fora da instrução  
 
 ---
 
 ### 🤝 Contribuições
 
-Contribuições são bem-vindas!
-Faça fork do projeto
-Crie uma branch para sua feature: git checkout -b minha-feature
-Faça commit das alterações: git commit -m 'Minha feature'
-Envie para o repositório: git push origin minha-feature
-Abra um Pull Request
+Contribuições são sempre bem-vindas!  
+1. Faça um fork do projeto  
+2. Crie uma branch para sua feature: `git checkout -b minha-feature`  
+3. Faça commit das alterações: `git commit -m 'Minha feature'`  
+4. Envie para o repositório: `git push origin minha-feature`  
+5. Abra um Pull Request para análise  
