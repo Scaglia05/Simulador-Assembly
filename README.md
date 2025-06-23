@@ -175,4 +175,4 @@ Contribuições são sempre bem-vindas!
 2. Crie uma branch para sua feature: `git checkout -b minha-feature`  
 3. Faça commit das alterações: `git commit -m 'Minha feature'`  
 4. Envie para o repositório: `git push origin minha-feature`  
-5. Abra um Pull Request para análise  
+5. Abra um Pull Request para análise   
